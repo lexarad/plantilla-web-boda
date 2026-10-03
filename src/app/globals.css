@@ -1,0 +1,338 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Sistema de Diseño Unificado: los tokens viven en src/styles/tokens.css.
+  Las vars shadcn (--primary, --background…) en :root de este archivo son
+  el fallback histórico. Cuando se aplica un [data-theme="..."] en <html>,
+  los bloques de tokens.css las pisan y toda la UI se reteme automáticamente.
+
+  IMPORTANTE: tokens.css se importa desde src/app/layout.tsx DESPUÉS de este
+  archivo (no con @import aquí). Un @import colocado tras las directivas
+  @tailwind lo descarta postcss-import (la spec exige @import al principio),
+  y cargarlo después en el layout garantiza además que sus bloques [data-theme]
+  ganen en la cascada sobre este :root fallback y sobre .dark.
+*/
+
+@layer base {
+  /* Tipografía: fuentes del sistema. Con especificidad cero (:where) para que
+     una fuente cargada con next/font en src/app/layout.tsx (que define
+     --font-sans / --font-display en <html>) gane siempre. */
+  :where(html) {
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-display: var(--font-sans);
+  }
+
+  :root {
+    --background: 49 30% 97%;
+    --foreground: 171 18% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 171 18% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 171 18% 11%;
+    --primary: 163 34% 23%;
+    --primary-foreground: 47 42% 96%;
+    --secondary: 10 39% 89%;
+    --secondary-foreground: 171 18% 15%;
+    --muted: 150 15% 92%;
+    --muted-foreground: 164 8% 42%;
+    --accent: 207 35% 88%;
+    --accent-foreground: 171 18% 13%;
+    --destructive: 0 67% 42%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 152 48% 26%;
+    --success-foreground: 0 0% 98%;
+    --warning: 36 90% 28%;
+    --warning-foreground: 0 0% 98%;
+    --info: 207 55% 30%;
+    --info-foreground: 0 0% 98%;
+    --border: 150 13% 84%;
+    --input: 150 13% 84%;
+    --ring: 163 34% 23%;
+    --radius: 0.625rem;
+    --gold: 36 56% 56%;
+    --gold-soft: 36 60% 75%;
+  }
+
+  .dark {
+    --background: 200 18% 7%;
+    --foreground: 47 30% 92%;
+    --card: 200 15% 11%;
+    --card-foreground: 47 30% 92%;
+    --popover: 200 18% 9%;
+    --popover-foreground: 47 30% 92%;
+    --primary: 163 38% 62%;
+    --primary-foreground: 200 18% 7%;
+    --secondary: 200 12% 18%;
+    --secondary-foreground: 47 30% 92%;
+    --muted: 200 12% 16%;
+    --muted-foreground: 47 12% 65%;
+    --accent: 207 18% 22%;
+    --accent-foreground: 47 30% 92%;
+    --destructive: 0 60% 56%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 152 38% 58%;
+    --success-foreground: 200 18% 7%;
+    --warning: 36 70% 58%;
+    --warning-foreground: 200 18% 7%;
+    --info: 207 45% 62%;
+    --info-foreground: 200 18% 7%;
+    --border: 200 12% 22%;
+    --input: 200 12% 22%;
+    --ring: 163 38% 62%;
+    --gold: 36 56% 65%;
+    --gold-soft: 36 50% 55%;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: rgb(255 255 255 / 0.15);
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: rgb(255 255 255 / 0.28);
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Mobile / app-feel resets */
+  button,
+  a,
+  [role="button"],
+  input[type="checkbox"],
+  input[type="radio"] {
+    touch-action: manipulation;
+  }
+
+  body {
+    @apply min-h-screen bg-background font-sans text-foreground antialiased;
+  }
+
+  /* En el panel las cifras usan SIEMPRE numerales alineados y tabulares: si
+     cambias a una fuente con numerales antiguos, "15" no se confunde con "I5". */
+  /* !important: las utilidades tabular-nums/lining-nums de Tailwind componen su propio
+     font-variant-numeric por elemento y pisarían esta regla base dejando oldstyle. */
+  [data-theme="admin"] .font-display {
+    font-variant-numeric: lining-nums tabular-nums !important;
+  }
+
+
+  ::selection {
+    background: hsl(var(--primary) / 0.2);
+  }
+
+  /* Universal focus-visible: clearer ring for keyboard users */
+  *:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 0.375rem;
+  }
+
+  /* Don't double the outline if the component already manages its own ring */
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible {
+    outline-offset: 2px;
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+
+  /* Elegant scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(0 0 0 / 0.2);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(0 0 0 / 0.35);
+  }
+
+  /* Skip-to-content (a11y) */
+  .sr-only-focusable:focus {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    padding: 0.6rem 1rem;
+    border-radius: 0.75rem;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    z-index: 999;
+    font-weight: 600;
+    box-shadow: 0 10px 30px rgb(0 0 0 / 0.2);
+  }
+}
+
+@layer utilities {
+  /* Subtle dot-grid texture */
+  .paper-grid {
+    background-image:
+      radial-gradient(circle, rgb(0 0 0 / 0.06) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  /* Variante oscura del panel admin: los puntos se invierten a claros. */
+  .dark [data-theme="admin"].paper-grid,
+  .dark [data-theme="admin"] .paper-grid {
+    background-image:
+      radial-gradient(circle, rgb(228 222 211 / 0.06) 1px, transparent 1px);
+  }
+
+  /* Chevron del <select> del panel admin: mismo SVG que antes vivía inline en
+     el componente, movido aquí para poder invertir el stroke en oscuro (el
+     gris fijo era invisible sobre fondo oscuro). */
+  select.admin-select {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3e%3cpath d='M1 1.5L6 6.5L11 1.5' stroke='%234b5563' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e");
+    background-position: right 12px center;
+    background-repeat: no-repeat;
+    background-size: 1.1rem 1.1rem;
+  }
+
+  .dark [data-theme="admin"] select.admin-select {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3e%3cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23a8b8ac' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e");
+  }
+
+  /* Titulares destacados del panel */
+  .text-gradient {
+    color: hsl(var(--primary));
+  }
+
+  /* Shimmer loading utility */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(255 255 255 / 0.6) 50%,
+      transparent 100%
+    );
+    background-size: 400px 100%;
+    animation: shimmer 2.4s linear infinite;
+  }
+
+  /* Lift on hover */
+  .hover-lift {
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 22px 60px rgb(28 38 35 / 0.13);
+  }
+
+  /* Animated gradient bar (top of cards) */
+  .gradient-shimmer {
+    background-size: 200% 100%;
+    animation: gradient-shimmer 8s ease-in-out infinite;
+  }
+  @keyframes gradient-shimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  /* Reduce motion fallback */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Print styling */
+  @media print {
+    body { background: white !important; }
+    .no-print { display: none !important; }
+  }
+
+  /* Impresión del panel admin: solo el contenido, nunca el chrome del shell.
+     Los elementos concretos (aside, header/footer del shell, banner demo,
+     barra móvil, acciones de página) se ocultan con la utilidad print:hidden
+     de Tailwind directamente en cada componente — así solo se oculta el nodo
+     exacto del shell y no chocamos con <header>/<aside> propios del contenido
+     de una página (p.ej. la tarjeta A6 en invitados/[id]/print, que ya trae
+     su propio <style> con @media print). Aquí solo quedan los ajustes de
+     fondo/color y de layout que sí son verdaderamente globales al ámbito admin. */
+  @media print {
+    [data-theme="admin"] {
+      background: white !important;
+      color: #1c1917 !important;
+      /* Neutralizar el tema en papel: si el panel está en modo oscuro, los
+         tokens oscuros rellenarían todas las tarjetas de tinta negra. En papel
+         siempre mandan los valores claros, sea cual sea el tema en pantalla. */
+      --background: 0 0% 100% !important;
+      --foreground: 30 12% 12% !important;
+      --card: 0 0% 100% !important;
+      --card-foreground: 30 12% 12% !important;
+      --primary: 221 55% 36% !important;
+      --primary-foreground: 0 0% 100% !important;
+      --secondary: 30 8% 91% !important;
+      --secondary-foreground: 30 12% 12% !important;
+      --muted: 30 8% 94% !important;
+      --muted-foreground: 30 6% 40% !important;
+      --accent: 140 12% 88% !important;
+      --accent-foreground: 30 12% 12% !important;
+      --border: 30 8% 76% !important;
+      --input: 30 8% 76% !important;
+      --destructive: 0 67% 42% !important;
+      --success: 152 48% 26% !important;
+      --warning: 36 90% 28% !important;
+      --info: 207 55% 30% !important;
+    }
+
+    [data-theme="admin"] main {
+      padding: 0 !important;
+    }
+  }
+
+  /* Safe-area inset utilities (notch / home-indicator support) */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pb-mobile-nav {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+  @media (min-width: 1024px) {
+    .pb-mobile-nav {
+      padding-bottom: 0;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: vt-out 200ms ease both;
+  }
+  ::view-transition-new(root) {
+    animation: vt-in 240ms ease both;
+  }
+  @keyframes vt-out {
+    to {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
+  @keyframes vt-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+
+}

@@ -1,0 +1,56 @@
+name: Vigilante de la web
+
+# Comprueba cada 6 horas que la web y la base de datos responden. El plan
+# gratuito de Supabase pausa el proyecto si pasa días sin uso, y entonces el
+# panel deja de funcionar sin avisar. Si algo falla, el job falla y GitHub
+# envía un correo.
+#
+# Para activarlo: GitHub > Settings > Secrets and variables > Actions
+#   - Variables > New variable: SITE_URL = https://tu-web.vercel.app (sin / final)
+#   - Secrets   > New secret:   CRON_SECRET = el mismo valor que en Vercel
+# Sin SITE_URL el vigilante no hace nada.
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  comprobar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SITE_URL: ${{ vars.SITE_URL }}
+    steps:
+      - name: ¿Está configurado?
+        id: config
+        run: |
+          if [ -n "$SITE_URL" ]; then
+            echo "activo=si" >> "$GITHUB_OUTPUT"
+          else
+            echo "activo=no" >> "$GITHUB_OUTPUT"
+            echo "Falta la variable SITE_URL: no hay nada que vigilar todavía."
+          fi
+
+      # -L: la raíz redirige (308) al idioma; lo que importa es dónde acaba.
+      - name: La portada responde
+        if: steps.config.outputs.activo == 'si'
+        run: |
+          codigo=$(curl -sL -o /dev/null -w "%{http_code}" --max-time 20 "$SITE_URL/")
+          echo "Portada: HTTP $codigo"
+          test "$codigo" = "200"
+
+      - name: La página de acceso responde
+        if: steps.config.outputs.activo == 'si'
+        run: |
+          codigo=$(curl -sL -o /dev/null -w "%{http_code}" --max-time 20 "$SITE_URL/login")
+          echo "Acceso: HTTP $codigo"
+          test "$codigo" = "200"
+
+      - name: La base de datos está despierta
+        if: steps.config.outputs.activo == 'si'
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          respuesta=$(curl -s --max-time 25 -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/cron/keepalive")
+          echo "Keepalive: $respuesta"
+          echo "$respuesta" | grep -q '"ok":true'

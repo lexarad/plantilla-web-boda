@@ -1,0 +1,23 @@
+# Dependencias y builds
+node_modules/
+.next/
+.next-e2e/
+out/
+dist/
+build/
+*.tsbuildinfo
+
+# Variables de entorno (nunca al repositorio)
+.env
+.env*.local
+
+# Vercel
+.vercel/
+
+# Pruebas
+playwright-report/
+test-results/
+playwright.local.config.ts
+
+# Copias de seguridad locales (scripts/backup-supabase.mjs)
+backups/

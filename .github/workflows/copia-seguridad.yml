@@ -1,0 +1,95 @@
+name: Copia de seguridad semanal
+
+# El plan gratuito de Supabase no hace copias. Todos los datos de la boda
+# (invitados, menús, alergias, mesas, presupuesto, proveedores) viven en un
+# único sitio y no hay deshacer. Esto vuelca todo a un JSON cada semana.
+#
+# Dónde queda la copia:
+#   1. Como artefacto de esta ejecución (se guarda 90 días) — siempre.
+#   2. Por correo, si existen los secretos MAIL_USUARIO / MAIL_CLAVE / MAIL_DESTINO.
+# Si el volcado falla o sale vacío, el job falla y GitHub avisa por correo.
+#
+# Para activarlo, crea en GitHub > Settings > Secrets and variables > Actions
+# los secretos SUPABASE_ACCESS_TOKEN y PROJECT_REF (ver scripts/backup-supabase.mjs).
+# Sin ellos, el job no hace nada.
+on:
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+jobs:
+  copiar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: ¿Está configurado?
+        id: config
+        env:
+          TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          REF: ${{ secrets.PROJECT_REF }}
+        run: |
+          if [ -n "$TOKEN" ] && [ -n "$REF" ]; then
+            echo "activo=si" >> "$GITHUB_OUTPUT"
+          else
+            echo "activo=no" >> "$GITHUB_OUTPUT"
+            echo "Faltan SUPABASE_ACCESS_TOKEN / PROJECT_REF: no se hace copia."
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.config.outputs.activo == 'si'
+
+      - uses: actions/setup-node@v4
+        if: steps.config.outputs.activo == 'si'
+        with:
+          node-version: 22
+
+      - name: Volcar la base de datos
+        if: steps.config.outputs.activo == 'si'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PROJECT_REF: ${{ secrets.PROJECT_REF }}
+        run: node scripts/backup-supabase.mjs backups
+
+      - name: Guardar la copia como artefacto
+        if: steps.config.outputs.activo == 'si'
+        uses: actions/upload-artifact@v4
+        with:
+          name: copia-boda
+          path: backups/*.json
+          retention-days: 90
+
+      # `secrets` no se puede consultar en un `if` de paso (GitHub lo rechaza al
+      # parsear); hay que pasarlo antes por `env`.
+      - name: ¿Hay correo configurado?
+        if: steps.config.outputs.activo == 'si'
+        id: correo
+        env:
+          USUARIO: ${{ secrets.MAIL_USUARIO }}
+          CLAVE: ${{ secrets.MAIL_CLAVE }}
+        run: |
+          if [ -n "$USUARIO" ] && [ -n "$CLAVE" ]; then
+            echo "configurado=si" >> "$GITHUB_OUTPUT"
+          else
+            echo "configurado=no" >> "$GITHUB_OUTPUT"
+            echo "Sin secretos de correo: la copia queda solo como artefacto."
+          fi
+
+      - name: Enviar la copia por correo
+        if: steps.correo.outputs.configurado == 'si'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USUARIO }}
+          password: ${{ secrets.MAIL_CLAVE }}
+          from: Copia de seguridad de la boda
+          to: ${{ secrets.MAIL_DESTINO || secrets.MAIL_USUARIO }}
+          subject: Copia de seguridad de la boda — ${{ github.run_id }}
+          body: |
+            Adjunta va la copia semanal de todos los datos de la boda
+            (invitados, mesas, autobuses, tareas, presupuesto, proveedores,
+            documentos, cronograma y auditoría).
+
+            Guárdala donde quieras: es un fichero JSON con todo dentro.
+          attachments: backups/*.json

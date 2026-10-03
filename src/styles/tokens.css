@@ -1,0 +1,161 @@
+/*
+  ──────────────────────────────────────────────────────────────────────────
+  tokens.css — colores, espacios, radios, sombras y movimiento.
+
+  Capa de tokens compartida entre la web de invitados y el panel admin.
+  Conviven con las vars shadcn existentes (--primary, --background, etc.):
+  cada [data-theme="..."] sobrescribe esas vars Y añade vars propias
+  (--theme-gradient-hero, --theme-accent, etc.).
+
+  No modifiques colores directamente en componentes. Edita aquí.
+  ──────────────────────────────────────────────────────────────────────────
+*/
+
+:root {
+    /* Espaciado base 4px */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.5rem;
+    --space-6: 2rem;
+    --space-7: 3rem;
+    --space-8: 4rem;
+    --space-9: 5rem;
+    --space-10: 6rem;
+
+    /* Radios */
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --radius-pill: 9999px;
+
+    /* Sombras */
+    --shadow-soft: 0 1px 3px rgb(0 0 0 / 0.08);
+    --shadow-lift: 0 4px 14px rgb(0 0 0 / 0.08);
+    --shadow-float: 0 12px 36px rgb(0 0 0 / 0.10);
+
+    /* Motion */
+    --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --ease-emphasized: cubic-bezier(0.3, 1.2, 0.4, 1);
+    --duration-fast: 150ms;
+    --duration-base: 240ms;
+    --duration-slow: 480ms;
+
+    /* Layout */
+    --container-max: 80rem;
+    --header-height: 4rem;
+    --mobile-bar-height: 3.5rem;
+}
+
+/* ─── Tema: Base (web de invitados) ─────────────────────────────────────
+   Deliberadamente neutro: blanco, gris y UN color de acento. Es un punto de
+   partida para cambiarlo, no un diseño terminado.
+
+   Para darle vuestro estilo, basta con tocar estas variables (formato HSL:
+   tono saturación luminosidad). La más visible es --primary: botones, enlaces
+   activos y detalles. Comprueba el contraste si la cambias (texto blanco
+   sobre --primary debe leerse bien). */
+:root,
+[data-theme="base"] {
+    --background: 0 0% 100%;
+    --foreground: 220 15% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 12%;
+    --primary: 221 70% 42%;         /* acento: azul */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 94%;
+    --secondary-foreground: 220 15% 12%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 40%;
+    --accent: 220 14% 94%;
+    --accent-foreground: 220 15% 12%;
+    --border: 220 13% 88%;
+    --input: 220 13% 82%;
+    --ring: 221 70% 42%;
+    --gold: 221 70% 42%;
+    --gold-soft: 221 60% 80%;
+
+    --theme-mode: light;
+    --theme-primary: #2052b6;
+    --theme-primary-soft: #c7d4ef;
+    --theme-accent: #2052b6;
+    --theme-ink: #1b1e24;
+    --theme-surface: #ffffff;
+    --theme-bg: #ffffff;
+    --theme-gradient-hero: linear-gradient(#ffffff, #ffffff);
+}
+
+/* ─── Tema: Admin (panel privado, paleta neutral) ─────────────────────── */
+[data-theme="admin"] {
+    --background: 220 14% 97%;
+    --foreground: 220 15% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 12%;
+    --primary: 221 55% 36%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 13% 91%;
+    --secondary-foreground: 220 15% 12%;
+    --muted: 220 13% 94%;
+    --muted-foreground: 220 9% 40%;
+    --accent: 221 40% 92%;
+    --accent-foreground: 220 15% 12%;
+    --border: 220 13% 86%;
+    --input: 220 13% 86%;
+    --ring: 221 55% 36%;
+    --gold: 221 55% 46%;
+    --gold-soft: 221 50% 80%;
+
+    --theme-mode: light;
+    --theme-primary: #29498f;
+    --theme-primary-soft: #cbd5ea;
+    --theme-accent: #4a6fbf;
+    --theme-ink: #1b1e24;
+    --theme-surface: #ffffff;
+    --theme-bg: #f6f7f9;
+    --theme-gradient-hero: linear-gradient(180deg, #f6f7f9 0%, #f1f3f6 100%);
+}
+
+/* ─── Tema: Admin — variante oscura (toggle Claro/Auto/Oscuro del panel).
+   Gris azulado oscuro: el tema claro, invertido.
+   Los tokens success/warning/info/popover no se redefinen aquí: heredan las
+   variantes .dark de globals.css. --destructive SÍ se redefine porque la
+   variante heredada (rojo 0 60% 56% sobre foreground blanco 0 0% 98%) no daba
+   AA sobre el fondo oscuro cálido de este tema. ──────────────────────────── */
+.dark [data-theme="admin"] {
+    --background: 220 14% 8%;
+    --foreground: 220 14% 90%;
+    --card: 220 13% 12%;
+    --card-foreground: 220 14% 90%;
+    --primary: 221 70% 72%;
+    --primary-foreground: 221 40% 10%;
+    --secondary: 220 10% 19%;
+    --secondary-foreground: 220 14% 90%;
+    --muted: 220 10% 16%;
+    --muted-foreground: 220 8% 66%;
+    --accent: 221 20% 22%;
+    --accent-foreground: 220 14% 90%;
+    --border: 220 10% 24%;
+    --input: 220 10% 24%;
+    --ring: 221 70% 72%;
+    --destructive: 0 62% 70%;
+    --destructive-foreground: 0 45% 12%;
+    --gold: 221 60% 70%;
+    --gold-soft: 221 30% 38%;
+
+    --theme-mode: dark;
+    --theme-primary: #93aee6;
+    --theme-primary-soft: #263247;
+    --theme-accent: #7d9bd8;
+    --theme-ink: #e3e6ec;
+    --theme-surface: #1a1d23;
+    --theme-bg: #121418;
+    --theme-gradient-hero: linear-gradient(180deg, #121418 0%, #171a1f 100%);
+}
+
+/* ─── Tipografía fluida (clamp-based) ─────────────────────────────────── */
+:root {
+  --text-fluid-base: clamp(0.95rem, 0.85rem + 0.6vw, 1.05rem);
+  --text-fluid-lg: clamp(1.1rem, 0.9rem + 1.2vw, 1.4rem);
+  --text-fluid-display: clamp(2rem, 1rem + 4vw, 3.5rem);
+}
