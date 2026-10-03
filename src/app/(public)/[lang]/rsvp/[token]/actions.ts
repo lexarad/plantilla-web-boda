@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getRsvpGuest } from "@/lib/data";
 import { rsvpEditCookieName } from "@/lib/rsvp-edit-cookie";
 import { rsvpSchema } from "@/lib/schemas";
 import { createRequiredSupabaseServerClient } from "@/lib/supabase/server";
@@ -14,50 +13,6 @@ import { resolveLocale } from "@/lib/locale";
 
 function parseFormData(formData: FormData) {
   return Object.fromEntries(formData.entries());
-}
-
-/** Compara apellidos ignorando mayúsculas, acentos y espacios de más. */
-function mismoApellido(a: string, b: string) {
-  const normaliza = (valor: string) =>
-    valor
-      .normalize("NFD")
-      .replace(/[̀-ͯ]/g, "")
-      .toLowerCase()
-      .replace(/\s+/g, " ")
-      .trim();
-
-  return normaliza(a) === normaliza(b) && normaliza(a).length > 0;
-}
-
-/**
- * Desbloquea la edición de una respuesta ya enviada. Confirmar por primera vez
- * no pasa por aquí: la fricción solo aparece al MODIFICAR, que es donde duele
- * que un enlace reenviado por WhatsApp cambie los datos de otra persona.
- */
-export async function unlockRsvpEditAction(formData: FormData): Promise<{ ok: boolean }> {
-  const token = String(formData.get("token") ?? "");
-  const apellidos = String(formData.get("apellidos") ?? "");
-
-  if (!token || !apellidos) {
-    return { ok: false };
-  }
-
-  const guest = await getRsvpGuest(token);
-
-  if (!guest || !mismoApellido(guest.apellidos, apellidos)) {
-    return { ok: false };
-  }
-
-  const cookieStore = await cookies();
-  cookieStore.set(rsvpEditCookieName(token), "1", {
-    path: "/",
-    httpOnly: true,
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 30
-  });
-
-  revalidatePath(`/${resolveLocale(String(formData.get("lang") ?? ""))}/rsvp/${token}`);
-  return { ok: true };
 }
 
 // Una confirmación afecta a la página del invitado y al panel
@@ -85,9 +40,18 @@ export async function updateRsvpAction(formData: FormData): Promise<RsvpActionRe
 
   const { token, ...rsvpValues } = parsed.data;
   const lang = resolveLocale(String(formData.get("lang") ?? ""));
+  // Apellido ya comprobado al desbloquear (ruta rsvp/[token]/desbloquear).
+  const apellido = (await cookies()).get(rsvpEditCookieName(token))?.value ?? null;
 
   if (isDemoMode()) {
-    await updateDemoRsvp(token, rsvpValues);
+    const resultado = await updateDemoRsvp(token, rsvpValues, apellido);
+
+    if (resultado === "apellido") {
+      return { ok: false, code: "bloqueado" };
+    }
+    if (resultado === "no-encontrado") {
+      return { ok: false, code: "guardar" };
+    }
 
     revalidateRsvp(token, lang);
     redirect(`/${lang}/rsvp/${token}?ok=1`);
@@ -103,7 +67,8 @@ export async function updateRsvpAction(formData: FormData): Promise<RsvpActionRe
     autobus_param: rsvpValues.necesita_autobus,
     hotel_param: rsvpValues.hotel_alojamiento,
     comentarios_param: rsvpValues.comentarios,
-    cancion_param: rsvpValues.cancion_sugerida ?? null
+    cancion_param: rsvpValues.cancion_sugerida ?? null,
+    apellido_param: apellido
   });
 
   if (error) {

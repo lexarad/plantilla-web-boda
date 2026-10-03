@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { readFile, writeFile } from "fs/promises";
 import { buildAuditEventInput } from "@/lib/audit";
 import { generateInvitationCode, normalizeInvitationCode } from "@/lib/invitation-code";
+import { normalizarApellido } from "@/lib/rsvp-edit-cookie";
 import type {
   AuditEvent,
   BusAssignment,
@@ -12,6 +13,7 @@ import type {
   DashboardSummary,
   Guest,
   PlannerTask,
+  RsvpExtras,
   RsvpGuest,
   TimelineEvent,
   WeddingDocument,
@@ -58,16 +60,15 @@ const trackingDefaults = {
   rsvp_last_locale: null as string | null
 };
 
-const demoStatePath = path.join(os.tmpdir(), "boda-wedding-demo-state.json");
+// Datos del modo demo, en un archivo temporal propio de esta plantilla.
+const demoStatePath = path.join(os.tmpdir(), "web-boda-plantilla-demo.json");
 
 /* Versión del contenido sembrado. Si el fichero persistido en tmp proviene de un
-   seed anterior (textos viejos: sin tildes, marca en otro orden…), se descarta y
-   se re-siembra: borrarlo a mano demostró no ser durable (recurrió en crítica). */
-const DEMO_SEED_VERSION = 2;
+   seed anterior, se descarta y se vuelve a sembrar. Súbela si cambias los datos
+   de ejemplo de createInitialDemoState. */
+const DEMO_SEED_VERSION = 3;
 
-const demoGuestLegacyIdAliases: Record<string, string> = {
-  "1af45817-d86a-4852-bc9d-148661b800eb": "55555555-5555-4555-8555-555555555550"
-};
+const demoGuestLegacyIdAliases: Record<string, string> = {};
 
 function now() {
   return new Date().toISOString();
@@ -979,15 +980,14 @@ function buildSummary(state: DemoState): DashboardSummary {
 function mapGuestForRsvp(guest: Guest): RsvpGuest {
   return {
     nombre: guest.nombre,
-    apellidos: guest.apellidos,
-    grupo: guest.grupo,
     confirmacion_asistencia: guest.confirmacion_asistencia,
     menu_elegido: guest.menu_elegido,
     alergias_intolerancias: guest.alergias_intolerancias,
     necesita_autobus: guest.necesita_autobus,
     hotel_alojamiento: guest.hotel_alojamiento,
     comentarios: guest.comentarios,
-    cancion_sugerida: guest.cancion_sugerida ?? null
+    cancion_sugerida: guest.cancion_sugerida ?? null,
+    rsvp_last_submitted_at: guest.rsvp_last_submitted_at ?? null
   };
 }
 
@@ -1172,40 +1172,27 @@ export async function getDemoRsvpGuest(token: string) {
   return guest ? mapGuestForRsvp(guest) : null;
 }
 
-export async function getDemoRsvpExtras(token: string) {
+export async function getDemoRsvpExtras(token: string): Promise<RsvpExtras | null> {
   const state = await loadDemoState();
   const guest = findDemoGuestByAccessKey(state, token);
   if (!guest) return null;
 
   const table = guest.mesa_id ? state.tables.find((t) => t.id === guest.mesa_id) ?? null : null;
-  const tablemates = guest.mesa_id
-    ? state.guests
-        .filter((g) => g.mesa_id === guest.mesa_id)
-        .sort((a, b) => a.apellidos.localeCompare(b.apellidos))
-        .map((g) => ({
-          nombre: g.nombre,
-          apellidos: g.apellidos,
-          grupo: g.grupo,
-          menu_elegido: g.menu_elegido,
-          is_self: g.id === guest.id
-        }))
-    : [];
-
-  // Bus assignment lookup
   const busAssignment = state.busAssignments?.find((b) => b.invitado_id === guest.id);
   const bus = busAssignment ? state.buses.find((b) => b.id === busAssignment.autobus_id) ?? null : null;
 
   return {
-    mesa_id: guest.mesa_id ?? null,
     mesa_nombre: table?.nombre ?? null,
-    mesa_capacidad: table?.capacidad ?? null,
-    mesa_notas: table?.notas ?? null,
-    tablemates,
     bus_nombre: bus?.nombre ?? null,
-    bus_paradas: bus?.paradas ?? [],
-    bus_horarios: bus?.horarios ?? null,
-    codigo_invitacion: guest.codigo_invitacion
+    bus_horarios: bus?.horarios ?? null
   };
+}
+
+/** Igual que la función SQL comprobar_apellido_invitado. */
+export async function checkDemoRsvpSurname(token: string, apellido: string) {
+  const state = await loadDemoState();
+  const guest = findDemoGuestByAccessKey(state, token);
+  return Boolean(guest && normalizarApellido(apellido) !== "" && normalizarApellido(guest.apellidos) === normalizarApellido(apellido));
 }
 
 type DemoGuestInput = Omit<
@@ -1558,13 +1545,31 @@ export async function deleteDemoBudgetItem(id: string) {
   });
 }
 
+/**
+ * Igual que la función SQL actualizar_rsvp_invitado: cambiar una respuesta ya
+ * enviada exige el apellido.
+ */
 export async function updateDemoRsvp(
   token: string,
-  values: Pick<RsvpGuest, "confirmacion_asistencia" | "menu_elegido" | "alergias_intolerancias" | "necesita_autobus" | "hotel_alojamiento" | "comentarios">
-) {
+  values: Pick<
+    RsvpGuest,
+    "confirmacion_asistencia" | "menu_elegido" | "alergias_intolerancias" | "necesita_autobus" | "hotel_alojamiento" | "comentarios"
+  > & { cancion_sugerida?: string | null },
+  apellido: string | null
+): Promise<"ok" | "apellido" | "no-encontrado"> {
+  let resultado: "ok" | "apellido" | "no-encontrado" = "no-encontrado";
+
   await updateDemoState((state) => {
     const guest = findDemoGuestByAccessKey(state, token);
     if (!guest) {
+      return;
+    }
+
+    if (
+      guest.confirmacion_asistencia !== "pendiente" &&
+      (normalizarApellido(apellido ?? "") === "" || normalizarApellido(apellido ?? "") !== normalizarApellido(guest.apellidos))
+    ) {
+      resultado = "apellido";
       return;
     }
 
@@ -1572,7 +1577,10 @@ export async function updateDemoRsvp(
     guest.rsvp_submit_count += 1;
     guest.rsvp_first_submitted_at ??= now();
     guest.rsvp_last_submitted_at = now();
+    resultado = "ok";
   });
+
+  return resultado;
 }
 
 export async function getDemoSettings(): Promise<WeddingSettings> {

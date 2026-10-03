@@ -7,7 +7,7 @@ import { WEDDING_LOCALES } from "@/lib/locale";
 import { cn } from "@/lib/utils";
 
 /**
- * Cambia el prefijo de idioma de la ruta actual (/es/agenda → /ca/agenda).
+ * Cambia el prefijo de idioma de la ruta actual (/es/programa → /ca/programa).
  * Si solo hay un idioma publicado no pinta nada.
  */
 export function SelectorIdioma({ locale, etiqueta }: { locale: WeddingLocale; etiqueta: string }) {

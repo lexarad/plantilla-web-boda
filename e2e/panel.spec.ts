@@ -22,6 +22,14 @@ test("el panel privado nunca se abre sin Supabase configurado", async ({ page })
   }
 });
 
+test("sin Supabase, el panel no llega a cargar datos de ejemplo", async ({ request }) => {
+  const respuesta = await request.get("/invitados", { maxRedirects: 0 });
+
+  expect(respuesta.status()).toBeGreaterThanOrEqual(300);
+  expect(respuesta.status()).toBeLessThan(400);
+  expect(await respuesta.text()).not.toMatch(/Laura|Marcos|K7N4Q/);
+});
+
 test("la página de acceso funciona y no filtra datos", async ({ page }) => {
   await page.goto("/login");
 

@@ -37,7 +37,7 @@ describe("getLoginErrorMessage", () => {
   );
 
   it("nunca devuelve el texto crudo recibido en la URL", () => {
-    // Regresión del incidente: la novia leyó «fetch failed» en pantalla.
+    // Un mensaje técnico crudo («fetch failed») nunca debe llegar a la pantalla.
     expect(getLoginErrorMessage("fetch failed")).toBe(genericLoginErrorMessage);
     expect(getLoginErrorMessage("desconocido")).toBe(genericLoginErrorMessage);
     expect(getLoginErrorMessage("")).toBe(genericLoginErrorMessage);

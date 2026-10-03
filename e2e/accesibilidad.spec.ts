@@ -6,7 +6,8 @@ import { expect, test } from "@playwright/test";
 // mide, se degrada con cada cambio.
 const PAGINAS = [
   ["portada", "/es"],
-  ["agenda", "/es/agenda"],
+  ["programa", "/es/programa"],
+  ["cómo llegar", "/es/como-llegar"],
   ["información", "/es/informacion"],
   ["regalo", "/es/regalo"],
   ["invitación", "/es/rsvp/K7N4Q"],

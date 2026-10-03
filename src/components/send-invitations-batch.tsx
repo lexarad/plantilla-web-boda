@@ -21,7 +21,8 @@ import { buildWhatsappUrl } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
 import { buildRsvpUrl } from "@/lib/rsvp-link";
 import { getWeddingDetails } from "@/lib/wedding-details";
-import { nombresPareja, nombresParejaEnFrase, textos } from "@/config/boda";
+import { mensajes } from "@/config/boda";
+import { rellenarMensaje } from "@/lib/mensajes";
 
 type Guest = {
   id: string;
@@ -61,35 +62,29 @@ const MODES: Array<{ id: Mode; label: string; hint: string }> = [
   }
 ];
 
-// Plantillas por defecto: salen de src/config/boda.ts. Se pueden editar en
-// pantalla antes de enviar. {nombre} y {link} se rellenan para cada invitado.
+// Plantillas por defecto: salen de `mensajes.envios` en src/config/boda.ts.
+// Se pueden editar en pantalla antes de enviar. {nombre} y {link} se rellenan
+// para cada invitado; el resto de huecos, aquí.
 const d = getWeddingDetails("es");
-const pareja = nombresParejaEnFrase.es;
-const recordatorioBus = d.busEnabled
-  ? `\n• Autobús a las ${d.busDeparture} desde ${d.busStopLabel}.\n• Regresos a las ${d.busReturns.join(" y ")}.`
-  : "";
+const detallesDelDia = [
+  `• ${d.dateLabel} — ${d.venueName}.`,
+  ...(d.busEnabled ? [`• Autobús: salida a las ${d.busDeparture} desde ${d.busStopLabel}; regresos a las ${d.busReturns.join(" y ")}.`] : [])
+].join("\n");
+const porInvitado = { nombre: "{nombre}", enlace: "{link}", detalles: detallesDelDia };
+
+function plantilla(envio: { asunto: string; whatsapp: string; email: string }) {
+  return {
+    wa: rellenarMensaje(envio.whatsapp, porInvitado),
+    email: rellenarMensaje(envio.email, porInvitado),
+    subject: rellenarMensaje(envio.asunto, porInvitado)
+  };
+}
 
 const DEFAULT_TEMPLATES: Record<Mode, { wa: string; email: string; subject: string }> = {
-  all_pending: {
-    wa: `¡Hola {nombre}! Te enviamos tu invitación personal para la boda de ${pareja}, el ${d.dateShort} en ${d.venueName}. Confirma aquí: {link}`,
-    email: `Hola {nombre},\n\nNos encantaría que vinieras a nuestra boda el ${d.dateLabel.toLowerCase()} en ${d.venueName} (${d.venueLocation}).\n\nConfirma tu asistencia en tu enlace personal:\n{link}\n\n${textos.es.firma}`,
-    subject: `Tu invitación a la boda de ${pareja} · ${d.dateShort}`
-  },
-  never_opened: {
-    wa: `¡Hola {nombre}! Te recordamos tu invitación a la boda de ${pareja}. ¿Pudiste verla? {link}`,
-    email: `Hola {nombre},\n\nHace unos días te enviamos la invitación a nuestra boda. Por si no llegó, aquí va de nuevo:\n{link}\n\n${textos.es.firma}`,
-    subject: "¿Te llegó nuestra invitación?"
-  },
-  opened_no_response: {
-    wa: "¡Hola {nombre}! Vimos que abriste la invitación pero aún no has confirmado. ¿Nos dices si podrás venir? {link}",
-    email: `Hola {nombre},\n\nCuando puedas, confírmanos si vendrás a la boda; así podemos cerrar mesas y catering:\n{link}\n\n${textos.es.firma}`,
-    subject: "Recordatorio · Confirma tu asistencia"
-  },
-  confirmed: {
-    wa: `¡Hola {nombre}! Gracias por confirmar. Toda la información del día: {link}`,
-    email: `Hola {nombre},\n\nGracias por confirmar. Recordatorio rápido:\n• ${d.dateLabel} — ${d.venueName}.${recordatorioBus}\n\nTu enlace personal sigue activo aquí:\n{link}\n\n${textos.es.firma}`,
-    subject: `Detalles del día · Boda ${nombresPareja}`
-  }
+  all_pending: plantilla(mensajes.envios.pendientes),
+  never_opened: plantilla(mensajes.envios.sinAbrir),
+  opened_no_response: plantilla(mensajes.envios.abiertoSinResponder),
+  confirmed: plantilla(mensajes.envios.confirmados)
 };
 
 function applyTemplate(template: string, vars: Record<string, string>) {

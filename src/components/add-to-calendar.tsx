@@ -1,10 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { Apple, Calendar, CalendarPlus, ChevronDown, Globe } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-
 type AddToCalendarProps = {
   title: string;
   description: string;
@@ -70,82 +65,28 @@ function downloadIcs(props: AddToCalendarProps) {
   URL.revokeObjectURL(url);
 }
 
-export function AddToCalendar(props: AddToCalendarProps) {
-  const { locale = "es" } = props;
-  const [open, setOpen] = useState(false);
+const labels = {
+  es: { title: "Guárdalo en tu calendario:", ics: "Apple / otros (.ics)" },
+  ca: { title: "Desa-ho al teu calendari:", ics: "Apple / altres (.ics)" }
+} as const;
 
-  const labels = locale === "ca"
-    ? { main: "Afegir al calendari", google: "Google Calendar", outlook: "Outlook", apple: "Apple Calendar (.ics)" }
-    : { main: "Añadir al calendario", google: "Google Calendar", outlook: "Outlook", apple: "Apple Calendar (.ics)" };
+/** Tres enlaces simples: Google, Outlook y archivo .ics para el resto. */
+export function AddToCalendar(props: AddToCalendarProps) {
+  const t = labels[props.locale ?? "es"];
+  const enlace = "text-primary underline underline-offset-4 hover:no-underline";
 
   return (
-    <div className="relative inline-block">
-      <Button
-        type="button"
-        variant="outline"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-        aria-haspopup="menu"
-      >
-        <CalendarPlus className="size-4" />
-        {labels.main}
-        <ChevronDown className={cn("size-3 transition-transform", open && "rotate-180")} />
-      </Button>
-
-      {open ? (
-        <>
-          <div
-            className="fixed inset-0 z-30"
-            aria-hidden
-            onClick={() => setOpen(false)}
-          />
-          <div
-            role="menu"
-            className="absolute right-0 z-40 mt-2 w-60 overflow-hidden rounded-2xl border border-border bg-card shadow-panel"
-          >
-            <a
-              role="menuitem"
-              href={buildGoogleUrl(props)}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-primary/5"
-              onClick={() => setOpen(false)}
-            >
-              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Globe className="size-4" />
-              </span>
-              {labels.google}
-            </a>
-            <a
-              role="menuitem"
-              href={buildOutlookUrl(props)}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-primary/5"
-              onClick={() => setOpen(false)}
-            >
-              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Calendar className="size-4" />
-              </span>
-              {labels.outlook}
-            </a>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                downloadIcs(props);
-                setOpen(false);
-              }}
-              className="flex w-full items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-primary/5"
-            >
-              <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                <Apple className="size-4" />
-              </span>
-              {labels.apple}
-            </button>
-          </div>
-        </>
-      ) : null}
-    </div>
+    <p className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+      <span className="text-muted-foreground">{t.title}</span>
+      <a href={buildGoogleUrl(props)} target="_blank" rel="noreferrer" className={enlace}>
+        Google Calendar
+      </a>
+      <a href={buildOutlookUrl(props)} target="_blank" rel="noreferrer" className={enlace}>
+        Outlook
+      </a>
+      <button type="button" onClick={() => downloadIcs(props)} className={enlace}>
+        {t.ics}
+      </button>
+    </p>
   );
 }

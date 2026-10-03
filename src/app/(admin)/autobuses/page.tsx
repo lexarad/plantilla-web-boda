@@ -118,7 +118,7 @@ export default async function BusesPage() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="bus-new-proveedor">Proveedor</Label>
-              <Input id="bus-new-proveedor" name="proveedor" placeholder="Autocares Costa" />
+              <Input id="bus-new-proveedor" name="proveedor" placeholder="Autocares Ejemplo" />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="bus-new-capacidad" required>Capacidad</Label>

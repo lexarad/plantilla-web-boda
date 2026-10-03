@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { nombresPareja } from "@/config/boda";
+import { WEDDING_LOCALES } from "@/lib/locale";
 import { getGuestById } from "@/lib/data";
 import { getSiteUrl } from "@/lib/env";
 import { getWeddingDetails } from "@/lib/wedding-details";
@@ -22,7 +23,7 @@ export default async function GuestPrintCardPage({
 }) {
   const { id } = await params;
   const query = await searchParams;
-  const locale = query.lang === "ca" ? "ca" : "es";
+  const locale = query.lang === "ca" && WEDDING_LOCALES.includes("ca") ? "ca" : "es";
   const [guest, siteUrl] = await Promise.all([getGuestById(id), getSiteUrl()]);
 
   if (!guest) {
@@ -32,7 +33,7 @@ export default async function GuestPrintCardPage({
   const details = getWeddingDetails(locale);
   const code = formatInvitationCode(guest.codigo_invitacion);
   const rsvpUrl = buildRsvpUrl(siteUrl, guest.codigo_invitacion);
-  const qrSvg = await buildQrSvg(rsvpUrl, 220);
+  const qrSvg = await buildQrSvg(rsvpUrl, 170);
   const fullName = `${guest.nombre} ${guest.apellidos}`.trim();
 
   return (
@@ -73,11 +74,13 @@ export default async function GuestPrintCardPage({
               Volver a la ficha
             </Link>
           </Button>
-          <Button asChild variant="ghost" size="sm">
-            <Link href={`/invitados/${guest.id}/print?lang=${locale === "es" ? "ca" : "es"}`}>
-              {locale === "ca" ? "Veure en castellà" : "Ver en catalán"}
-            </Link>
-          </Button>
+          {WEDDING_LOCALES.includes("ca") ? (
+            <Button asChild variant="ghost" size="sm">
+              <Link href={`/invitados/${guest.id}/print?lang=${locale === "es" ? "ca" : "es"}`}>
+                {locale === "ca" ? "Veure en castellà" : "Ver en catalán"}
+              </Link>
+            </Button>
+          ) : null}
           <PrintButton label="Imprimir tarjeta" />
         </div>
       </div>
@@ -89,38 +92,30 @@ export default async function GuestPrintCardPage({
           className="print-card relative overflow-hidden border border-neutral-300 bg-white text-neutral-900 shadow-panel"
           style={{ width: "105mm", height: "148mm" }}
         >
-          <div className="grid h-full grid-rows-[auto_1fr_auto] p-6">
-            <header className="text-center">
-              <p className="text-[10px] uppercase tracking-wide text-neutral-500">
-                {locale === "ca" ? "Estàs convidat" : "Estás invitado"}
-              </p>
-              <p className="mt-3 font-display text-3xl font-semibold leading-tight">{nombresPareja}</p>
-            </header>
-
-            <div className="flex flex-col items-center justify-center gap-2 text-center">
-              <p className="text-lg font-medium leading-tight">{fullName}</p>
-              {guest.grupo ? <p className="text-[10px] text-neutral-500">{guest.grupo}</p> : null}
-              <div className="mt-2 flex items-center justify-center bg-white p-1" dangerouslySetInnerHTML={{ __html: qrSvg }} />
-              <p className="text-[10px] text-neutral-500">
-                {locale === "ca" ? "Escaneja per confirmar" : "Escanea para confirmar"}
+          {/* Composición: fecha arriba a la izquierda, nombre del invitado como
+              protagonista, QR abajo a la derecha. */}
+          <div className="flex h-full flex-col justify-between p-7">
+            <div>
+              <p className="text-xs font-medium text-neutral-500">{details.dateLabel}</p>
+              <p className="text-xs text-neutral-500">
+                {details.venueLabel} · {details.venueLocation}
               </p>
             </div>
 
-            <footer className="grid gap-2 text-center">
-              <p className="text-[10px] text-neutral-500">
-                {locale === "ca" ? "Codi" : "Código"}{" "}
-                <span className="font-mono text-sm tracking-widest text-neutral-900">{code}</span>
+            <div>
+              <p className="text-sm text-neutral-500">{locale === "ca" ? "Ens fa il·lusió que vinguis," : "Nos encantará verte,"}</p>
+              <p className="mt-1 text-2xl font-semibold leading-tight">{fullName}</p>
+              <p className="mt-4 font-display text-base">{nombresPareja}</p>
+            </div>
+
+            <div className="flex items-end justify-between gap-4">
+              <p className="max-w-[45%] text-[10px] leading-4 text-neutral-500">
+                {locale === "ca" ? "Respon aquí amb la càmera del mòbil." : "Responde aquí con la cámara del móvil."}
+                <br />
+                <span className="font-mono text-xs tracking-widest text-neutral-900">{code}</span>
               </p>
-              <div>
-                <p className="text-sm font-medium">{details.dateLabel}</p>
-                <p className="text-[10px] text-neutral-500">
-                  {details.venueLabel} · {details.venueLocation}
-                </p>
-              </div>
-              <p className="break-all px-2 font-mono text-[8px] text-neutral-400">
-                {siteUrl.replace(/^https?:\/\//, "")}/rsvp/{guest.codigo_invitacion}
-              </p>
-            </footer>
+              <div className="bg-white" dangerouslySetInnerHTML={{ __html: qrSvg }} />
+            </div>
           </div>
         </article>
       </div>

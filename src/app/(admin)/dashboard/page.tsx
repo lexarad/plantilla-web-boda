@@ -1,5 +1,8 @@
 import Link from "next/link";
-import { etiquetaResponsable, evento, nombresPareja, nombresParejaEnFrase } from "@/config/boda";
+import { etiquetaResponsable, evento, mensajes, nombresPareja } from "@/config/boda";
+import { getSiteUrl } from "@/lib/env";
+import { rellenarMensaje } from "@/lib/mensajes";
+import { buildRsvpUrl } from "@/lib/rsvp-link";
 import {
   ArrowRight,
   BriefcaseBusiness,
@@ -61,11 +64,12 @@ function normalize(value: string) {
 export default async function DashboardPage() {
   // Los recuentos los hace la base de datos (metricas_dashboard). Aquí solo se
   // piden las dos listas que de verdad se pintan: tareas próximas y proveedores.
-  const [{ upcomingTasks }, summary, suppliers, aRecordar] = await Promise.all([
+  const [{ upcomingTasks }, summary, suppliers, aRecordar, siteUrl] = await Promise.all([
     getDashboardData(),
     getDashboardMetrics(),
     getSuppliers(),
-    getGuestsToRemind()
+    getGuestsToRemind(),
+    getSiteUrl()
   ]);
   const details = getWeddingDetails("es");
   const menuStats = buildMenuStats(summary.menus);
@@ -188,7 +192,10 @@ export default async function DashboardPage() {
                   <Button asChild size="sm" variant="outline">
                     <a
                       href={buildWhatsappUrl(
-                        `¡Hola ${guest.nombre}! ¿Pudiste ver nuestra invitación? Cuando puedas, confírmanos si vendrás a la boda de ${nombresParejaEnFrase.es}`
+                        rellenarMensaje(mensajes.whatsappRecordatorio, {
+                          nombre: guest.nombre,
+                          enlace: buildRsvpUrl(siteUrl, guest.codigo_invitacion)
+                        })
                       )}
                       target="_blank"
                       rel="noopener noreferrer"

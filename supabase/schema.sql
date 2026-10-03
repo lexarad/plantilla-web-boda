@@ -362,115 +362,6 @@ $$;
 
 grant execute on function public.resumen_dashboard() to authenticated;
 
-create or replace function public.obtener_rsvp_invitado(token_param text)
-returns table (
-  nombre text,
-  apellidos text,
-  grupo text,
-  confirmacion_asistencia text,
-  menu_elegido text,
-  alergias_intolerancias text,
-  necesita_autobus boolean,
-  hotel_alojamiento text,
-  comentarios text,
-  cancion_sugerida text
-)
-language sql
-security definer
-set search_path = public
-as $$
-  select
-    i.nombre,
-    i.apellidos,
-    i.grupo,
-    i.confirmacion_asistencia,
-    i.menu_elegido,
-    i.alergias_intolerancias,
-    i.necesita_autobus,
-    i.hotel_alojamiento,
-    i.comentarios,
-    i.cancion_sugerida
-  from public.invitados i
-  where i.rsvp_token = token_param
-    or public.normalizar_codigo_invitacion(i.codigo_invitacion) = public.normalizar_codigo_invitacion(token_param)
-  limit 1;
-$$;
-
-grant execute on function public.obtener_rsvp_invitado(text) to anon, authenticated;
-
-create or replace function public.registrar_acceso_rsvp(token_param text, locale_param text default null)
-returns void
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  update public.invitados
-  set
-    rsvp_view_count = coalesce(rsvp_view_count, 0) + 1,
-    rsvp_first_view_at = coalesce(rsvp_first_view_at, now()),
-    rsvp_last_view_at = now(),
-    rsvp_last_locale = coalesce(locale_param, rsvp_last_locale),
-    updated_at = now()
-  where rsvp_token = token_param
-    or public.normalizar_codigo_invitacion(codigo_invitacion) = public.normalizar_codigo_invitacion(token_param);
-
-  if not found then
-    raise exception 'token no encontrado';
-  end if;
-end;
-$$;
-
-grant execute on function public.registrar_acceso_rsvp(text, text) to anon, authenticated;
-
-create or replace function public.actualizar_rsvp_invitado(
-  token_param text,
-  asistencia_param text,
-  menu_param text,
-  alergias_param text,
-  autobus_param boolean,
-  hotel_param text,
-  comentarios_param text,
-  cancion_param text
-)
-returns void
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  if asistencia_param not in ('confirmado', 'rechazado') then
-    raise exception 'asistencia invalida';
-  end if;
-
-  if menu_param not in ('adulto', 'vegetariano', 'vegano', 'sin_gluten', 'sin_lactosa', 'infantil', 'especial') then
-    raise exception 'menu invalido';
-  end if;
-
-  update public.invitados
-  set
-    confirmacion_asistencia = asistencia_param,
-    menu_elegido = menu_param,
-    alergias_intolerancias = alergias_param,
-    necesita_autobus = autobus_param,
-    hotel_alojamiento = hotel_param,
-    comentarios = comentarios_param,
-    cancion_sugerida = cancion_param,
-    rsvp_submit_count = coalesce(rsvp_submit_count, 0) + 1,
-    rsvp_first_submitted_at = coalesce(rsvp_first_submitted_at, now()),
-    rsvp_last_submitted_at = now(),
-    updated_at = now()
-  where rsvp_token = token_param
-    or public.normalizar_codigo_invitacion(codigo_invitacion) = public.normalizar_codigo_invitacion(token_param);
-
-  if not found then
-    raise exception 'token no encontrado';
-  end if;
-end;
-$$;
-
-grant execute on function public.actualizar_rsvp_invitado(text, text, text, text, boolean, text, text, text) to anon, authenticated;
-
 insert into storage.buckets (id, name, public)
 values ('documentos-boda', 'documentos-boda', false)
 on conflict (id) do nothing;
@@ -499,207 +390,15 @@ using (bucket_id = 'documentos-boda' and public.is_wedding_admin());
 
 
 -- ═════════════════════════════════════════════════════════════════════
--- 20260612_cancion_sugerida
+-- Canción sugerida en el RSVP
 -- ═════════════════════════════════════════════════════════════════════
 
--- Persiste la cancion sugerida del RSVP: nueva columna + funcion RPC con cancion_param.
+-- Columna para la canción que sugiere cada invitado en el RSVP.
 
 alter table public.invitados add column if not exists cancion_sugerida text;
 
--- Eliminar la firma antigua de 7 argumentos para evitar sobrecarga ambigua.
-drop function if exists public.actualizar_rsvp_invitado(text, text, text, text, boolean, text, text);
-
-create or replace function public.actualizar_rsvp_invitado(
-  token_param text,
-  asistencia_param text,
-  menu_param text,
-  alergias_param text,
-  autobus_param boolean,
-  hotel_param text,
-  comentarios_param text,
-  cancion_param text
-)
-returns void
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  if asistencia_param not in ('confirmado', 'rechazado') then
-    raise exception 'asistencia invalida';
-  end if;
-
-  if menu_param not in ('adulto', 'vegetariano', 'vegano', 'sin_gluten', 'sin_lactosa', 'infantil', 'especial') then
-    raise exception 'menu invalido';
-  end if;
-
-  update public.invitados
-  set
-    confirmacion_asistencia = asistencia_param,
-    menu_elegido = menu_param,
-    alergias_intolerancias = alergias_param,
-    necesita_autobus = autobus_param,
-    hotel_alojamiento = hotel_param,
-    comentarios = comentarios_param,
-    cancion_sugerida = cancion_param,
-    rsvp_submit_count = coalesce(rsvp_submit_count, 0) + 1,
-    rsvp_first_submitted_at = coalesce(rsvp_first_submitted_at, now()),
-    rsvp_last_submitted_at = now(),
-    updated_at = now()
-  where rsvp_token = token_param
-    or public.normalizar_codigo_invitacion(codigo_invitacion) = public.normalizar_codigo_invitacion(token_param);
-
-  if not found then
-    raise exception 'token no encontrado';
-  end if;
-end;
-$$;
-
-grant execute on function public.actualizar_rsvp_invitado(text, text, text, text, boolean, text, text, text) to anon, authenticated;
-
--- La función de LECTURA debe devolver también cancion_sugerida (y hotel_alojamiento,
--- que sufría el mismo hueco preexistente). Sin esto, getRsvpGuest recibe undefined
--- al reabrir el RSVP y el reenvío del formulario sobrescribe la canción con null.
-create or replace function public.obtener_rsvp_invitado(token_param text)
-returns table (
-  nombre text,
-  apellidos text,
-  grupo text,
-  confirmacion_asistencia text,
-  menu_elegido text,
-  alergias_intolerancias text,
-  necesita_autobus boolean,
-  hotel_alojamiento text,
-  comentarios text,
-  cancion_sugerida text
-)
-language sql
-security definer
-set search_path = public
-as $$
-  select
-    i.nombre,
-    i.apellidos,
-    i.grupo,
-    i.confirmacion_asistencia,
-    i.menu_elegido,
-    i.alergias_intolerancias,
-    i.necesita_autobus,
-    i.hotel_alojamiento,
-    i.comentarios,
-    i.cancion_sugerida
-  from public.invitados i
-  where i.rsvp_token = token_param
-    or public.normalizar_codigo_invitacion(i.codigo_invitacion) = public.normalizar_codigo_invitacion(token_param)
-  limit 1;
-$$;
-
-grant execute on function public.obtener_rsvp_invitado(text) to anon, authenticated;
-
-
 -- ═════════════════════════════════════════════════════════════════════
--- 20260702_rpc_publicas
--- ═════════════════════════════════════════════════════════════════════
-
--- RPC públicas para las lecturas anónimas de la web (popularidad de menús
--- y extras del RSVP). Antes estas rutas hacían SELECT directos sobre `invitados`
--- con el rol anon, pero la RLS solo concede acceso a admins, así que en
--- producción el invitado no veía su mesa/compañeros/bus.
--- Se replica el patrón `security definer` + grant a anon que ya usa
--- obtener_rsvp_invitado.
-
--- 2) Popularidad de menús: solo menú + estado, sin datos personales.
-create or replace function public.popularidad_menus()
-returns table (
-  menu_elegido text,
-  confirmacion_asistencia text
-)
-language sql
-security definer
-set search_path = public
-as $$
-  select i.menu_elegido, i.confirmacion_asistencia
-  from public.invitados i;
-$$;
-
-grant execute on function public.popularidad_menus() to anon, authenticated;
-
--- 3) Extras del RSVP (mesa, compañeros de mesa, autobús) por token o código.
---    Devuelve un único JSON; solo campos no sensibles de los compañeros.
-create or replace function public.obtener_rsvp_extras(token_param text)
-returns jsonb
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  self_rec record;
-  bus_rec record;
-  resultado jsonb;
-begin
-  select
-    i.id,
-    i.mesa_id,
-    i.codigo_invitacion,
-    m.nombre as mesa_nombre,
-    m.capacidad as mesa_capacidad,
-    m.notas as mesa_notas
-  into self_rec
-  from public.invitados i
-  left join public.mesas m on m.id = i.mesa_id
-  where i.rsvp_token = token_param
-     or public.normalizar_codigo_invitacion(i.codigo_invitacion) = public.normalizar_codigo_invitacion(token_param)
-  limit 1;
-
-  if self_rec.id is null then
-    return null;
-  end if;
-
-  select a.nombre, a.paradas, a.horarios
-  into bus_rec
-  from public.autobus_invitados ai
-  join public.autobuses a on a.id = ai.autobus_id
-  where ai.invitado_id = self_rec.id
-  limit 1;
-
-  resultado := jsonb_build_object(
-    'mesa_id', self_rec.mesa_id,
-    'mesa_nombre', self_rec.mesa_nombre,
-    'mesa_capacidad', self_rec.mesa_capacidad,
-    'mesa_notas', self_rec.mesa_notas,
-    'codigo_invitacion', self_rec.codigo_invitacion,
-    'bus_nombre', bus_rec.nombre,
-    'bus_paradas', coalesce(bus_rec.paradas, '[]'::jsonb),
-    'bus_horarios', bus_rec.horarios,
-    'tablemates', coalesce(
-      (
-        select jsonb_agg(
-                 jsonb_build_object(
-                   'nombre', t.nombre,
-                   'apellidos', t.apellidos,
-                   'grupo', t.grupo,
-                   'menu_elegido', t.menu_elegido,
-                   'is_self', t.id = self_rec.id
-                 )
-                 order by t.apellidos
-               )
-        from public.invitados t
-        where self_rec.mesa_id is not null
-          and t.mesa_id = self_rec.mesa_id
-      ),
-      '[]'::jsonb
-    )
-  );
-
-  return resultado;
-end;
-$$;
-
-grant execute on function public.obtener_rsvp_extras(text) to anon, authenticated;
-
-
--- ═════════════════════════════════════════════════════════════════════
--- 20260710_cronograma_bilingue
+-- Cronograma bilingüe
 -- ═════════════════════════════════════════════════════════════════════
 
 -- Cronograma bilingüe: variante en catalán de título y descripción.
@@ -711,7 +410,7 @@ alter table public.cronograma add column if not exists descripcion_ca text;
 
 
 -- ═════════════════════════════════════════════════════════════════════
--- 2026-07-25-metricas-dashboard
+-- Métricas del panel
 -- ═════════════════════════════════════════════════════════════════════
 
 -- Métricas del panel calculadas en la base de datos.
@@ -795,7 +494,7 @@ grant execute on function public.metricas_dashboard() to authenticated;
 
 
 -- ═════════════════════════════════════════════════════════════════════
--- 2026-07-25-papelera-invitados
+-- Papelera de invitados
 -- ═════════════════════════════════════════════════════════════════════
 
 -- Papelera de invitados: borrar deja de ser definitivo.
@@ -882,3 +581,242 @@ end;
 $$;
 
 grant execute on function public.metricas_dashboard() to authenticated;
+
+
+-- ═════════════════════════════════════════════════════════════════════
+-- Funciones públicas del RSVP
+-- ═════════════════════════════════════════════════════════════════════
+
+-- Son las únicas puertas de la web de invitados a la base de datos (rol anon,
+-- con la clave pública que viaja en el navegador). Cada una exige el enlace o
+-- el código de UN invitado y solo lee o cambia lo de ese invitado. Los
+-- invitados en la papelera (eliminado_en) no existen para ellas.
+--
+-- Van al final del archivo porque usan columnas añadidas más arriba.
+
+-- Restos de versiones anteriores: se borran por si este SQL se ejecuta sobre
+-- una base antigua. Exponían a cualquiera la lista completa de invitados.
+drop function if exists public.muro_publico();
+drop function if exists public.popularidad_menus();
+drop function if exists public.actualizar_rsvp_invitado(text, text, text, text, boolean, text, text);
+drop function if exists public.actualizar_rsvp_invitado(text, text, text, text, boolean, text, text, text);
+-- Cambia de columnas: hay que borrarla antes de volver a crearla.
+drop function if exists public.obtener_rsvp_invitado(text);
+
+-- Compara apellidos ignorando mayúsculas, acentos y espacios de más
+-- (igual que la web, que normaliza antes de enviar).
+create or replace function public.normalizar_apellido(valor text)
+returns text
+language sql
+immutable
+as $$
+  select btrim(regexp_replace(
+    translate(lower(coalesce(valor, '')), 'áàäâãéèëêíìïîóòöôõúùüûñç', 'aaaaaeeeeiiiiooooouuuunc'),
+    '\s+', ' ', 'g'
+  ));
+$$;
+
+-- Lo que ve el invitado en su página. No devuelve el apellido: es la
+-- respuesta a la comprobación para cambiar una respuesta ya enviada.
+create or replace function public.obtener_rsvp_invitado(token_param text)
+returns table (
+  nombre text,
+  confirmacion_asistencia text,
+  menu_elegido text,
+  alergias_intolerancias text,
+  necesita_autobus boolean,
+  hotel_alojamiento text,
+  comentarios text,
+  cancion_sugerida text,
+  rsvp_last_submitted_at timestamptz
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    i.nombre,
+    i.confirmacion_asistencia,
+    i.menu_elegido,
+    i.alergias_intolerancias,
+    i.necesita_autobus,
+    i.hotel_alojamiento,
+    i.comentarios,
+    i.cancion_sugerida,
+    i.rsvp_last_submitted_at
+  from public.invitados i
+  where i.eliminado_en is null
+    and (
+      i.rsvp_token = token_param
+      or public.normalizar_codigo_invitacion(i.codigo_invitacion) = public.normalizar_codigo_invitacion(token_param)
+    )
+  limit 1;
+$$;
+
+grant execute on function public.obtener_rsvp_invitado(text) to anon, authenticated;
+
+-- ¿Este apellido es el del invitado de este enlace? Solo responde sí o no.
+create or replace function public.comprobar_apellido_invitado(token_param text, apellido_param text)
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.invitados i
+    where i.eliminado_en is null
+      and (
+        i.rsvp_token = token_param
+        or public.normalizar_codigo_invitacion(i.codigo_invitacion) = public.normalizar_codigo_invitacion(token_param)
+      )
+      and public.normalizar_apellido(apellido_param) <> ''
+      and public.normalizar_apellido(i.apellidos) = public.normalizar_apellido(apellido_param)
+  );
+$$;
+
+grant execute on function public.comprobar_apellido_invitado(text, text) to anon, authenticated;
+
+-- Cuenta las visitas al enlace personal (para el panel).
+create or replace function public.registrar_acceso_rsvp(token_param text, locale_param text default null)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.invitados
+  set
+    rsvp_view_count = coalesce(rsvp_view_count, 0) + 1,
+    rsvp_first_view_at = coalesce(rsvp_first_view_at, now()),
+    rsvp_last_view_at = now(),
+    rsvp_last_locale = coalesce(locale_param, rsvp_last_locale),
+    updated_at = now()
+  where eliminado_en is null
+    and (
+      rsvp_token = token_param
+      or public.normalizar_codigo_invitacion(codigo_invitacion) = public.normalizar_codigo_invitacion(token_param)
+    );
+
+  if not found then
+    raise exception 'token no encontrado';
+  end if;
+end;
+$$;
+
+grant execute on function public.registrar_acceso_rsvp(text, text) to anon, authenticated;
+
+-- Guarda la respuesta. La primera vez basta con el enlace; para CAMBIAR una
+-- respuesta ya enviada hace falta además el apellido, para que un enlace
+-- reenviado por error no permita cambiar los datos de otra persona.
+create or replace function public.actualizar_rsvp_invitado(
+  token_param text,
+  asistencia_param text,
+  menu_param text,
+  alergias_param text,
+  autobus_param boolean,
+  hotel_param text,
+  comentarios_param text,
+  cancion_param text,
+  apellido_param text default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  invitado record;
+begin
+  if asistencia_param not in ('confirmado', 'rechazado') then
+    raise exception 'asistencia invalida';
+  end if;
+
+  if menu_param not in ('adulto', 'vegetariano', 'vegano', 'sin_gluten', 'sin_lactosa', 'infantil', 'especial') then
+    raise exception 'menu invalido';
+  end if;
+
+  select i.id, i.apellidos, i.confirmacion_asistencia
+  into invitado
+  from public.invitados i
+  where i.eliminado_en is null
+    and (
+      i.rsvp_token = token_param
+      or public.normalizar_codigo_invitacion(i.codigo_invitacion) = public.normalizar_codigo_invitacion(token_param)
+    )
+  limit 1;
+
+  if invitado.id is null then
+    raise exception 'token no encontrado';
+  end if;
+
+  if invitado.confirmacion_asistencia <> 'pendiente'
+    and (
+      public.normalizar_apellido(apellido_param) = ''
+      or public.normalizar_apellido(apellido_param) <> public.normalizar_apellido(invitado.apellidos)
+    ) then
+    raise exception 'apellido requerido';
+  end if;
+
+  update public.invitados
+  set
+    confirmacion_asistencia = asistencia_param,
+    menu_elegido = menu_param,
+    alergias_intolerancias = alergias_param,
+    necesita_autobus = autobus_param,
+    hotel_alojamiento = hotel_param,
+    comentarios = comentarios_param,
+    cancion_sugerida = cancion_param,
+    rsvp_submit_count = coalesce(rsvp_submit_count, 0) + 1,
+    rsvp_first_submitted_at = coalesce(rsvp_first_submitted_at, now()),
+    rsvp_last_submitted_at = now(),
+    updated_at = now()
+  where id = invitado.id;
+end;
+$$;
+
+grant execute on function public.actualizar_rsvp_invitado(text, text, text, text, boolean, text, text, text, text) to anon, authenticated;
+
+-- Mesa y autobús asignados al invitado, para enseñárselos en su página.
+-- Solo los nombres: nada de las demás personas de la mesa.
+create or replace function public.obtener_rsvp_extras(token_param text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  self_rec record;
+  bus_rec record;
+begin
+  select i.id, m.nombre as mesa_nombre
+  into self_rec
+  from public.invitados i
+  left join public.mesas m on m.id = i.mesa_id
+  where i.eliminado_en is null
+    and (
+      i.rsvp_token = token_param
+      or public.normalizar_codigo_invitacion(i.codigo_invitacion) = public.normalizar_codigo_invitacion(token_param)
+    )
+  limit 1;
+
+  if self_rec.id is null then
+    return null;
+  end if;
+
+  select a.nombre, a.horarios
+  into bus_rec
+  from public.autobus_invitados ai
+  join public.autobuses a on a.id = ai.autobus_id
+  where ai.invitado_id = self_rec.id
+  limit 1;
+
+  return jsonb_build_object(
+    'mesa_nombre', self_rec.mesa_nombre,
+    'bus_nombre', bus_rec.nombre,
+    'bus_horarios', bus_rec.horarios
+  );
+end;
+$$;
+
+grant execute on function public.obtener_rsvp_extras(text) to anon, authenticated;

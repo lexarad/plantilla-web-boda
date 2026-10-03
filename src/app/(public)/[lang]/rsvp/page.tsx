@@ -13,21 +13,21 @@ const copy: Record<
 > = {
   es: {
     title: "Confirmar asistencia",
-    description: "Escribe el código que aparece en tu invitación. Si tienes el QR, escanéalo y llegarás directamente.",
+    description: "Tu invitación lleva un código de letras y números (o un QR que te trae aquí directamente).",
     label: "Código de invitación",
-    placeholder: "Ejemplo: K7N4Q",
+    placeholder: "Por ejemplo: AB12CD34",
     button: "Continuar",
-    helper: "No necesitas cuenta ni contraseña.",
-    invalid: "No encontramos ese código. Revisa que esté bien escrito."
+    helper: "Sin registros ni contraseñas: solo el código.",
+    invalid: "Ese código no existe. Comprueba las letras y los números e inténtalo de nuevo."
   },
   ca: {
     title: "Confirmar assistència",
-    description: "Escriu el codi que apareix a la teva invitació. Si tens el QR, escaneja'l i hi arribaràs directament.",
+    description: "La teva invitació porta un codi de lletres i números (o un QR que et porta aquí directament).",
     label: "Codi d'invitació",
-    placeholder: "Exemple: K7N4Q",
+    placeholder: "Per exemple: AB12CD34",
     button: "Continuar",
-    helper: "No necessites compte ni contrasenya.",
-    invalid: "No trobem aquest codi. Revisa que estigui ben escrit."
+    helper: "Sense registres ni contrasenyes: només el codi.",
+    invalid: "Aquest codi no existeix. Comprova les lletres i els números i torna-ho a provar."
   }
 };
 

@@ -26,9 +26,9 @@ Cada página es un archivo pequeño en `src/app/(public)/[lang]/`:
 | Ruta | Archivo | Qué muestra |
 |---|---|---|
 | `/es` | `page.tsx` | Portada |
-| `/es/agenda` | `agenda/page.tsx` | Programa del día |
+| `/es/programa` | `programa/page.tsx` | Programa del día |
 | `/es/informacion` | `informacion/page.tsx` | Preguntas frecuentes, alojamiento, contacto |
-| `/es/mapa` | `mapa/page.tsx` | Mapa y transporte |
+| `/es/como-llegar` | `como-llegar/page.tsx` | Mapa y transporte |
 | `/es/regalo` | `regalo/page.tsx` | IBAN |
 | `/es/rsvp` | `rsvp/page.tsx` | Introducir el código de invitación |
 | `/es/rsvp/<código>` | `rsvp/[token]/page.tsx` | Página personal del invitado y formulario |
@@ -81,7 +81,7 @@ El formulario de confirmación habla con la base de datos a través de **server 
 | `comentarios` | texto (opcional) |
 | `cancion_sugerida` | texto (opcional) |
 
-- `unlockRsvpEditAction`: pide `token` + `apellidos` para volver a editar una respuesta ya enviada.
+- `POST /<idioma>/rsvp/<código>/desbloquear` (`rsvp/[token]/desbloquear/route.ts`): recibe el campo `apellidos` y, si coincide (lo comprueba la base de datos), permite cambiar una respuesta ya enviada. Sin ese paso, `updateRsvpAction` devuelve el error `bloqueado`. El formulario de ejemplo está en `src/components/rsvp-edit-gate.tsx`.
 
 `src/components/publico/formulario-rsvp.tsx` es un ejemplo completo con controles nativos: cópialo y cambia el aspecto, o sustitúyelo por tus componentes manteniendo los mismos `name`.
 
@@ -90,8 +90,12 @@ Para añadir otro valor de menú hay que tocarlo en todos estos sitios: la restr
 ### Añadir una página nueva
 
 1. Crea `src/app/(public)/[lang]/<nombre>/page.tsx` (copia `informacion/page.tsx` como punto de partida).
-2. Añade la ruta a `rutasPublicas` y, si quieres, a `menuPublico` en `src/lib/textos-web.ts`, con su texto en `menu`.
+2. En `src/lib/textos-web.ts`: añade el nombre al tipo `SeccionPublica`, su ruta a `rutasPublicas`, su texto en `menu` (en cada idioma) y, si quieres que salga en el menú, añádelo a `menuPublico`.
 3. Añade `<nombre>` a `RUTAS_PUBLICAS` y al `matcher` de `src/middleware.ts`, para que `/<nombre>` sin idioma redirija.
+
+## Textos de los mensajes
+
+Los WhatsApp y correos que se mandan a los invitados desde el panel están en `mensajes`, al final de `src/config/boda.ts`. Usan huecos como `{nombre}` o `{enlace}`, que se rellenan solos.
 
 ## Comprobar que no se ha roto nada
 
@@ -100,4 +104,4 @@ npm run typecheck && npm test && npm run build
 npm run e2e        # recorre la web como un invitado y mide accesibilidad
 ```
 
-Las pruebas de `e2e/` buscan textos como "Confirmar asistencia" o "Enviar respuesta". Si los cambias, actualiza también las pruebas.
+Las pruebas de `e2e/` buscan textos como "Confirmar asistencia", "Cuenta conmigo" o "Guardar respuesta". Si los cambias, actualiza también las pruebas.

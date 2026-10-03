@@ -7,9 +7,9 @@ export type SeccionPublica = "inicio" | "agenda" | "informacion" | "mapa" | "reg
 /** Rutas de la web de invitados, sin el prefijo de idioma. */
 export const rutasPublicas: Record<SeccionPublica, string> = {
   inicio: "",
-  agenda: "/agenda",
+  agenda: "/programa",
   informacion: "/informacion",
-  mapa: "/mapa",
+  mapa: "/como-llegar",
   regalo: "/regalo",
   rsvp: "/rsvp"
 };
@@ -28,7 +28,6 @@ type TextosWeb = {
   saltarContenido: string;
   inicio: {
     confirmar: string;
-    verPrograma: string;
     loEsencial: string;
     fecha: string;
     lugar: string;
@@ -90,7 +89,6 @@ export const textosWeb: Record<WeddingLocale, TextosWeb> = {
     saltarContenido: "Saltar al contenido",
     inicio: {
       confirmar: "Confirmar asistencia",
-      verPrograma: "Ver el programa",
       loEsencial: "Lo esencial",
       fecha: "Fecha",
       lugar: "Lugar",
@@ -98,10 +96,10 @@ export const textosWeb: Record<WeddingLocale, TextosWeb> = {
       transporte: "Transporte",
       vestimenta: "Vestimenta",
       confirmarAntes: "Confirmar antes del",
-      faltan: (dias) => (dias === 1 ? "Falta 1 día" : `Faltan ${dias} días`),
-      hoy: "¡Es hoy!",
+      faltan: (dias) => (dias === 1 ? "Queda 1 día" : `Quedan ${dias} días`),
+      hoy: "Hoy es el día",
       masInfo: "Más información",
-      preparacion: "La web todavía está en preparación. Pronto podrás confirmar tu asistencia desde aquí."
+      preparacion: "Todavía no se puede responder desde la web. Lo activaremos muy pronto."
     },
     agenda: { titulo: "Programa", intro: "Horario aproximado del día." },
     informacion: {
@@ -150,7 +148,6 @@ export const textosWeb: Record<WeddingLocale, TextosWeb> = {
     saltarContenido: "Saltar al contingut",
     inicio: {
       confirmar: "Confirmar assistència",
-      verPrograma: "Veure el programa",
       loEsencial: "L'essencial",
       fecha: "Data",
       lugar: "Lloc",
@@ -158,10 +155,10 @@ export const textosWeb: Record<WeddingLocale, TextosWeb> = {
       transporte: "Transport",
       vestimenta: "Vestimenta",
       confirmarAntes: "Confirmar abans del",
-      faltan: (dias) => (dias === 1 ? "Falta 1 dia" : `Falten ${dias} dies`),
-      hoy: "És avui!",
+      faltan: (dias) => (dias === 1 ? "Queda 1 dia" : `Queden ${dias} dies`),
+      hoy: "Avui és el dia",
       masInfo: "Més informació",
-      preparacion: "La web encara està en preparació. Aviat podràs confirmar la teva assistència des d'aquí."
+      preparacion: "Encara no es pot respondre des de la web. Ho activarem molt aviat."
     },
     agenda: { titulo: "Programa", intro: "Horari aproximat del dia." },
     informacion: {

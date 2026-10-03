@@ -188,10 +188,12 @@ export interface CateringGuest {
   necesita_autobus: boolean;
 }
 
+/**
+ * Lo que la web de invitados puede leer de un invitado. No incluye el apellido:
+ * es la "contraseña" para cambiar una respuesta ya enviada.
+ */
 export interface RsvpGuest {
   nombre: string;
-  apellidos: string;
-  grupo: string | null;
   confirmacion_asistencia: RsvpStatus;
   menu_elegido: MenuChoice;
   alergias_intolerancias: string | null;
@@ -203,20 +205,9 @@ export interface RsvpGuest {
   rsvp_last_submitted_at?: string | null;
 }
 
+/** Mesa y autobús asignados al invitado (solo nombres, nada de los demás). */
 export interface RsvpExtras {
-  mesa_id: string | null;
   mesa_nombre: string | null;
-  mesa_capacidad: number | null;
-  mesa_notas: string | null;
-  tablemates: Array<{
-    nombre: string;
-    apellidos: string;
-    grupo: string | null;
-    menu_elegido: MenuChoice;
-    is_self?: boolean;
-  }>;
   bus_nombre: string | null;
-  bus_paradas: string[];
   bus_horarios: string | null;
-  codigo_invitacion: string;
 }

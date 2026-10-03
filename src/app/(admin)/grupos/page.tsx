@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { nombresParejaEnFrase } from "@/config/boda";
+import { mensajes } from "@/config/boda";
+import { rellenarMensaje } from "@/lib/mensajes";
 import { CheckCircle2, Clock3, Users, XCircle } from "lucide-react";
 import { getGuests } from "@/lib/data";
 import { getSiteUrl } from "@/lib/env";
@@ -37,8 +38,7 @@ function buildWhatsappGroupUrl(guests: Guest[], siteUrl: string) {
   const links = guests
     .map((g) => `• ${g.nombre}: ${buildRsvpUrl(siteUrl, g.codigo_invitacion)}`)
     .join("\n");
-  const text = `¡Hola ${names}! Os enviamos vuestros enlaces personales para confirmar asistencia a la boda de ${nombresParejaEnFrase.es}:\n${links}`;
-  return buildWhatsappUrl(text);
+  return buildWhatsappUrl(rellenarMensaje(mensajes.whatsappGrupo, { nombre: names, enlace: links }));
 }
 
 export default async function GroupsPage() {
@@ -217,7 +217,7 @@ export default async function GroupsPage() {
                             {rsvpLabel(guest.confirmacion_asistencia)}
                           </Badge>
                           <WhatsAppButton
-                            href={buildWhatsappUrl(`¡Hola ${guest.nombre}! Tu enlace para la boda: ${rsvpUrl}`)}
+                            href={buildWhatsappUrl(rellenarMensaje(mensajes.whatsappInvitacion, { nombre: guest.nombre, enlace: rsvpUrl }))}
                             variant="ghost"
                             size="icon"
                             iconOnly

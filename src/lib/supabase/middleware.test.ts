@@ -8,9 +8,9 @@ describe("isProtectedPath", () => {
     "/ca",
     "/es/rsvp",
     "/es/rsvp/ABCDE",
-    "/es/agenda",
+    "/es/programa",
     "/es/informacion",
-    "/es/mapa",
+    "/es/como-llegar",
     "/es/regalo",
     "/login"
   ];
@@ -53,7 +53,7 @@ describe("isProtectedPath", () => {
   it("no confunde prefijos parciales de páginas públicas con rutas protegidas", () => {
     // Regresión: ninguna página pública empieza por un prefijo del panel.
     // Si algún día se añade una pública con nombre cercano, este test avisa.
-    expect(isProtectedPath("/mapa")).toBe(false);
+    expect(isProtectedPath("/como-llegar")).toBe(false);
     expect(isProtectedPath("/mesas-publicas")).toBe(false);
   });
 });

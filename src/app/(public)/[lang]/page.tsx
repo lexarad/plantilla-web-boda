@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { evento, nombresPareja, pareja, textos } from "@/config/boda";
 import { CuentaAtras } from "@/components/publico/cuenta-atras";
-import { Bloque, ListaDatos } from "@/components/publico/pagina";
+import { ListaDatos } from "@/components/publico/pagina";
 import { Button } from "@/components/ui/button";
 import { resolveLocale } from "@/lib/locale";
 import { rutaPublica, textosWeb } from "@/lib/textos-web";
@@ -62,7 +62,7 @@ export default async function Inicio({
   ];
 
   return (
-    <main id="main" lang={locale} className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6 sm:py-20">
+    <main id="main" lang={locale} className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-16">
       <EventJsonLd descripcion={texto.descripcionSeo} />
 
       {estado === "en-preparacion" ? (
@@ -71,46 +71,36 @@ export default async function Inicio({
         </p>
       ) : null}
 
-      <section>
-        <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">{texto.antetitulo}</p>
-        <h1 className="mt-2 font-display text-4xl font-semibold tracking-tight sm:text-6xl">{nombresPareja}</h1>
-        <p className="mt-4 text-lg">
-          {d.dateLabel} · {d.venueLocation}
-        </p>
-        <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground">{texto.bienvenida}</p>
-        <div className="mt-4">
-          <CuentaAtras fechaIso={d.eventDateTimeIso} locale={locale} />
-        </div>
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Button asChild size="lg" className="rounded-md">
+      <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+        <section>
+          <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-6xl">{nombresPareja}</h1>
+          <p className="mt-3 text-lg text-muted-foreground">{texto.antetitulo}</p>
+          <p className="mt-6 max-w-lg text-base leading-7">{texto.bienvenida}</p>
+          <Button asChild size="lg" className="mt-8 rounded-md">
             <Link href={rutaPublica(locale, "rsvp")}>{t.inicio.confirmar}</Link>
           </Button>
-          <Button asChild size="lg" variant="outline" className="rounded-md">
-            <Link href={rutaPublica(locale, "agenda")}>{t.inicio.verPrograma}</Link>
-          </Button>
-        </div>
-      </section>
+        </section>
 
-      <div className="mt-14 space-y-10">
-        <Bloque titulo={t.inicio.loEsencial}>
+        <aside aria-label={t.inicio.loEsencial} className="space-y-3">
+          <div className="flex items-baseline justify-between gap-4">
+            <h2 className="font-display text-lg font-semibold">{t.inicio.loEsencial}</h2>
+            <CuentaAtras fechaIso={d.eventDateTimeIso} locale={locale} />
+          </div>
           <ListaDatos items={esencial} />
-        </Bloque>
-
-        <Bloque titulo={t.inicio.masInfo}>
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {(["agenda", "informacion", "mapa", "regalo"] as const).map((seccion) => (
-              <li key={seccion}>
-                <Link
-                  href={rutaPublica(locale, seccion)}
-                  className="block rounded-md border border-border px-4 py-3 text-sm font-medium transition-colors hover:border-primary hover:text-primary"
-                >
-                  {t.menu[seccion]} →
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Bloque>
+        </aside>
       </div>
+
+      <nav aria-label={t.inicio.masInfo} className="mt-14 border-t border-border pt-6">
+        <ul className="flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium">
+          {(["agenda", "informacion", "mapa", "regalo"] as const).map((seccion) => (
+            <li key={seccion}>
+              <Link href={rutaPublica(locale, seccion)} className="text-primary underline-offset-4 hover:underline">
+                {t.menu[seccion]}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </main>
   );
 }

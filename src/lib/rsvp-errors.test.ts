@@ -9,6 +9,10 @@ describe("classifyRsvpError", () => {
     expect(classifyRsvpError({ message: "getaddrinfo ENOTFOUND db.supabase.co" })).toBe("red");
   });
 
+  it("reconoce la respuesta bloqueada por falta de apellido", () => {
+    expect(classifyRsvpError({ message: "apellido requerido" })).toBe("bloqueado");
+  });
+
   it("el resto de fallos son de guardado", () => {
     expect(classifyRsvpError({ message: 'new row violates check constraint "menu_check"' })).toBe("guardar");
     expect(classifyRsvpError({})).toBe("guardar");
@@ -16,7 +20,7 @@ describe("classifyRsvpError", () => {
 });
 
 describe("getRsvpErrorMessage", () => {
-  const codigos: RsvpErrorCode[] = ["datos", "red", "guardar"];
+  const codigos: RsvpErrorCode[] = ["datos", "red", "guardar", "bloqueado"];
 
   it("responde en los dos idiomas de la boda", () => {
     for (const codigo of codigos) {
@@ -35,7 +39,7 @@ describe("getRsvpErrorMessage", () => {
   });
 
   it("tranquiliza sobre lo escrito en los fallos reintentables", () => {
-    expect(getRsvpErrorMessage("red", "es")).toMatch(/sigue aquí|no se ha perdido/i);
-    expect(getRsvpErrorMessage("datos", "es")).toMatch(/no se ha perdido/i);
+    expect(getRsvpErrorMessage("red", "es")).toMatch(/siguen en el formulario/i);
+    expect(getRsvpErrorMessage("datos", "es")).toMatch(/siguen en el formulario/i);
   });
 });

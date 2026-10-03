@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { nombresParejaEnFrase } from "@/config/boda";
+import { mensajes } from "@/config/boda";
+import { rellenarMensaje } from "@/lib/mensajes";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft,
@@ -81,7 +82,7 @@ export default async function GuestDetailPage({
   const guestName = `${guest.nombre} ${guest.apellidos}`.trim();
   const invitationCode = formatInvitationCode(guest.codigo_invitacion);
   const rsvpUrl = buildRsvpUrl(siteUrl, guest.codigo_invitacion);
-  const whatsappUrl = buildWhatsappUrl(`¡Hola ${guest.nombre}! Te enviamos tu enlace personal para confirmar asistencia a la boda de ${nombresParejaEnFrase.es}. Puedes responder aquí: ${rsvpUrl}`);
+  const whatsappUrl = buildWhatsappUrl(rellenarMensaje(mensajes.whatsappInvitacion, { nombre: guest.nombre, enlace: rsvpUrl }));
   const menuLabel = menuChoiceOptions.find((option) => option.value === guest.menu_elegido)?.label ?? guest.menu_elegido;
   const assignedBusId = busAssignments.find((assignment) => assignment.invitado_id === guest.id)?.autobus_id ?? null;
   const assignedBusName = assignedBusId ? buses.find((bus) => bus.id === assignedBusId)?.nombre ?? null : null;

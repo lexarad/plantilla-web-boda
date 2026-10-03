@@ -15,11 +15,11 @@
 export type WeddingLocale = "es" | "ca";
 
 /**
- * Idiomas que se publican, en orden (el primero es el principal).
- * Si solo queréis castellano, dejad `["es"]`: desaparece el selector de idioma
- * y no se generan las páginas en catalán.
+ * Idiomas que se publican, en orden (el primero es el principal). Con un solo
+ * idioma no aparece selector. Para publicar también en catalán: `["es", "ca"]`
+ * (los textos en catalán ya están escritos en este archivo y en textos-web.ts).
  */
-export const idiomas: readonly WeddingLocale[] = ["es", "ca"];
+export const idiomas: readonly WeddingLocale[] = ["es"];
 
 // ─── La pareja ───────────────────────────────────────────────────────────
 
@@ -102,9 +102,9 @@ type TextosIdioma = {
 
 export const textos: Record<WeddingLocale, TextosIdioma> = {
   es: {
-    antetitulo: "Nos casamos",
+    antetitulo: "Te invitamos a nuestra boda",
     bienvenida:
-      "Queremos celebrarlo con vosotros. Aquí tenéis la información del día y el acceso para confirmar asistencia.",
+      "Aquí tienes todo lo que necesitas para el día. Y, cuando lo tengas claro, dinos si vienes.",
     descripcionSeo: `Boda de ${nombresParejaEnFrase.es}. Información del día y confirmación de asistencia.`,
     lugarDescripcion: "Describe aquí el lugar en una o dos frases.",
     transporteTitulo: "Autobús para invitados",
@@ -116,9 +116,9 @@ export const textos: Record<WeddingLocale, TextosIdioma> = {
     firma: `Un abrazo, ${nombresParejaEnFrase.es}`
   },
   ca: {
-    antetitulo: "Ens casem",
+    antetitulo: "Et convidem al nostre casament",
     bienvenida:
-      "Volem celebrar-ho amb vosaltres. Aquí teniu la informació del dia i l'accés per confirmar assistència.",
+      "Aquí tens tot el que necessites per al dia. I, quan ho tinguis clar, digues-nos si vens.",
     descripcionSeo: `Casament de ${nombresParejaEnFrase.ca}. Informació del dia i confirmació d'assistència.`,
     lugarDescripcion: "Descriu aquí el lloc en una o dues frases.",
     transporteTitulo: "Autobús per als convidats",
@@ -131,7 +131,7 @@ export const textos: Record<WeddingLocale, TextosIdioma> = {
   }
 };
 
-/** Programa del día que sale en /agenda y en la portada. */
+/** Programa del día que sale en /programa. */
 export const programa: Record<WeddingLocale, Array<{ hora: string; titulo: string; texto: string }>> = {
   es: [
     { hora: horario.llegada, titulo: "Llegada", texto: "Recepción de invitados." },
@@ -153,30 +153,30 @@ export const programa: Record<WeddingLocale, Array<{ hora: string; titulo: strin
 export const preguntas: Record<WeddingLocale, Array<{ pregunta: string; respuesta: string }>> = {
   es: [
     {
-      pregunta: "¿Cómo confirmo mi asistencia?",
-      respuesta: "Con el enlace personal o el código que aparece en tu invitación."
+      pregunta: "¿Hay aparcamiento?",
+      respuesta: "Escribe aquí si hay parking en el lugar o dónde aparcar cerca."
     },
     {
-      pregunta: "¿Puedo cambiar mi respuesta?",
-      respuesta: "Sí. Vuelve a abrir el mismo enlace y guarda los cambios."
+      pregunta: "¿Pueden venir niños?",
+      respuesta: "Explica aquí si los peques están invitados y si habrá menú o actividades para ellos."
     },
     {
-      pregunta: "¿Dónde indico alergias o intolerancias?",
-      respuesta: "En el formulario de confirmación hay un campo para ello."
+      pregunta: "¿Hasta qué hora dura la fiesta?",
+      respuesta: "Indica aquí la hora aproximada de cierre y cómo volver."
     }
   ],
   ca: [
     {
-      pregunta: "Com confirmo la meva assistència?",
-      respuesta: "Amb l'enllaç personal o el codi que apareix a la teva invitació."
+      pregunta: "Hi ha aparcament?",
+      respuesta: "Escriu aquí si hi ha pàrquing al lloc o on aparcar a prop."
     },
     {
-      pregunta: "Puc canviar la meva resposta?",
-      respuesta: "Sí. Torna a obrir el mateix enllaç i desa els canvis."
+      pregunta: "Poden venir nens?",
+      respuesta: "Explica aquí si els petits estan convidats i si hi haurà menú o activitats per a ells."
     },
     {
-      pregunta: "On indico al·lèrgies o intoleràncies?",
-      respuesta: "Al formulari de confirmació hi ha un camp per a això."
+      pregunta: "Fins a quina hora dura la festa?",
+      respuesta: "Indica aquí l'hora aproximada de tancament i com tornar."
     }
   ]
 };
@@ -207,3 +207,54 @@ export function etiquetaResponsable(valor: string) {
  * error del login). Suele ser quien ha montado la web.
  */
 export const contactoTecnico = pareja.uno;
+
+// ─── Mensajes que se envían desde el panel ───────────────────────────────
+
+/**
+ * Textos de WhatsApp y correo. Huecos que se rellenan solos:
+ *   {nombre} invitado · {enlace} su enlace personal · {pareja} · {fecha} · {lugar}
+ * Escríbelos a vuestra manera: estos son solo un punto de partida.
+ */
+export const mensajes = {
+  /** Botón de WhatsApp en la ficha y en la lista de invitados. */
+  whatsappInvitacion:
+    "¡Hola, {nombre}! Te invitamos a la boda de {pareja}: {fecha}, en {lugar}. Cuando puedas, cuéntanos si vienes desde aquí: {enlace}",
+  /** Un único mensaje para todo un grupo (familia, pareja...). {enlace} es la lista de enlaces. */
+  whatsappGrupo: "¡Hola, {nombre}! Estáis invitados a la boda de {pareja}. Cada uno tiene su enlace para responder:\n{enlace}",
+  /** Recordatorio para quien aún no ha contestado. */
+  whatsappRecordatorio: "{nombre}, ¿te llegó la invitación a la boda de {pareja}? Nos viene genial saber si vienes: {enlace}",
+  /** Envíos masivos desde Invitados > Enviar invitaciones (se pueden editar en pantalla). */
+  envios: {
+    pendientes: {
+      asunto: "{pareja} se casan el {fecha}",
+      whatsapp: "¡Hola, {nombre}! Te invitamos a la boda de {pareja}: {fecha}, en {lugar}. Responde aquí: {enlace}",
+      email:
+        "Hola, {nombre}:\n\nNos casamos el {fecha} en {lugar} y nos encantaría que vinieras.\n\nPuedes responder (y cambiar la respuesta cuando quieras) en tu enlace:\n{enlace}\n\n{firma}"
+    },
+    sinAbrir: {
+      asunto: "Tu invitación a la boda de {pareja}",
+      whatsapp: "{nombre}, te reenviamos la invitación a la boda de {pareja} por si se perdió: {enlace}",
+      email: "Hola, {nombre}:\n\nTe reenviamos la invitación a nuestra boda por si no te llegó:\n{enlace}\n\n{firma}"
+    },
+    abiertoSinResponder: {
+      asunto: "¿Vienes a la boda de {pareja}?",
+      whatsapp: "{nombre}, cuando tengas un momento, dinos si vienes a la boda: {enlace}",
+      email:
+        "Hola, {nombre}:\n\nAún nos falta tu respuesta. Con ella podemos cerrar mesas y menús:\n{enlace}\n\n{firma}"
+    },
+    confirmados: {
+      asunto: "Detalles del día · {pareja}",
+      whatsapp: "{nombre}, ¡gracias por confirmar! Aquí tienes toda la información del día: {enlace}",
+      email: "Hola, {nombre}:\n\n¡Gracias por confirmar! Te recordamos lo principal:\n{detalles}\n\nTu enlace sigue activo:\n{enlace}\n\n{firma}"
+    }
+  },
+  /** Correo de invitación individual (botón "Enviar por email" de la ficha). */
+  correo: {
+    asunto: "{pareja} se casan el {fecha}",
+    saludo: "Hola, {nombre}:",
+    texto: "Nos casamos y nos encantaría contar contigo. Puedes responder desde tu enlace personal:",
+    boton: "Responder a la invitación",
+    enlaceAlternativo: "Si el botón no funciona, abre esta dirección:",
+    pie: "El enlace es solo tuyo y sirve también para cambiar la respuesta. Responde antes del {limite}."
+  }
+} as const;

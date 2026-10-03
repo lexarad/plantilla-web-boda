@@ -33,13 +33,15 @@ const nextConfig: NextConfig = {
       "connect-src 'self' https://*.supabase.co",
       // El mapa de la página «Cómo llegar» va embebido de Google Maps.
       "frame-src 'self' https://www.google.com https://maps.google.com",
-      // En dev el centro de mando local embebe la web en un iframe desde otro
-      // puerto (misma razón por la que X-Frame-Options solo va en producción).
+      // En desarrollo se permite previsualizar la web dentro de un iframe local.
       process.env.NODE_ENV === "production" ? "frame-ancestors 'none'" : "frame-ancestors 'self' http://localhost:*",
       "base-uri 'self'",
       "form-action 'self'",
       "object-src 'none'",
-      "upgrade-insecure-requests"
+      // Solo en producción: en local no hay HTTPS y, al abrir la web desde el
+      // móvil por la red de casa (http://192.168.x.x:3000), el navegador
+      // intentaría cargar estilos e imágenes por https y fallarían.
+      ...(process.env.NODE_ENV === "production" ? ["upgrade-insecure-requests"] : [])
     ].join("; ");
 
     const securityHeaders = [
@@ -49,8 +51,8 @@ const nextConfig: NextConfig = {
       { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
       { key: "Content-Security-Policy", value: csp }
     ];
-    // En dev el centro de mando local (localhost:4555) embebe la web en un iframe
-    // desde otro puerto; X-Frame-Options: DENY lo rompería, así que solo en producción.
+    // X-Frame-Options: DENY impediría la previsualización local en iframe, así
+    // que solo se envía en producción.
     // HSTS solo tiene sentido bajo HTTPS (producción): fuerza el candado en visitas
     // posteriores y protege la sesión admin frente a downgrade/stripping.
     if (process.env.NODE_ENV === "production") {

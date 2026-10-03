@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { nombresPareja } from "../src/config/boda";
+import { idiomas, nombresPareja } from "../src/config/boda";
 
 // El camino que recorren los invitados, contra el modo demo (sin Supabase).
 // La invitada de ejemplo K7N4Q (Laura Garcia) ya ha respondido, así que para
@@ -21,6 +21,7 @@ test("la portada carga y ofrece confirmar asistencia", async ({ page }) => {
 });
 
 test("la portada respeta el catalán", async ({ page }) => {
+  test.skip(!idiomas.includes("ca"), "El catalán no está publicado en src/config/boda.ts");
   await page.goto("/ca");
 
   await expect(page.locator("html")).toHaveAttribute("lang", "ca");
@@ -28,9 +29,9 @@ test("la portada respeta el catalán", async ({ page }) => {
 });
 
 test("las direcciones sin idioma redirigen", async ({ page }) => {
-  await page.goto("/agenda");
+  await page.goto("/programa");
 
-  await expect(page).toHaveURL(/\/es\/agenda$/);
+  await expect(page).toHaveURL(/\/es\/programa$/);
 });
 
 test("un enlace de invitación inválido no rompe la página", async ({ page }) => {
@@ -50,28 +51,44 @@ test("sin Supabase en producción, los códigos de ejemplo no se aceptan", async
   await page.getByRole("button", { name: /continuar/i }).click();
 
   await expect(page).toHaveURL(/\/es\?estado=en-preparacion$/);
-  await expect(page.getByRole("status")).toContainText(/en preparación/i);
+  await expect(page.getByRole("status")).toContainText(/todavía no se puede responder/i);
+});
+
+test("sin el apellido no se puede cambiar una respuesta ya enviada", async ({ page }) => {
+  await page.context().clearCookies();
+  // networkidle: el formulario del apellido funciona con JavaScript; hay que
+  // esperar a que la página esté hidratada antes de enviarlo.
+  await page.goto(`/es/rsvp/${CODIGO_DEMO}`, { waitUntil: "networkidle" });
+
+  await expect(page.getByLabel(/tu apellido/i)).toBeVisible();
+  await page.getByLabel(/tu apellido/i).fill("Otro");
+  await page.getByRole("button", { name: /continuar/i }).click();
+
+  await expect(page.getByRole("alert").filter({ hasText: /no coincide/i })).toBeVisible();
+  await expect(page.getByLabel(/cuenta conmigo/i)).toHaveCount(0);
 });
 
 test("el invitado puede cambiar su respuesta", async ({ page }) => {
-  await page.goto(`/es/rsvp/${CODIGO_DEMO}`);
+  await page.goto(`/es/rsvp/${CODIGO_DEMO}`, { waitUntil: "networkidle" });
 
   const apellido = page.getByLabel(/tu apellido/i);
   if (await apellido.isVisible().catch(() => false)) {
     await apellido.fill(APELLIDO_DEMO);
-    await page.getByRole("button", { name: /desbloquear/i }).click();
+    await page.getByRole("button", { name: /continuar/i }).click();
   }
 
-  await page.getByLabel(/sí, allí estaré/i).check();
+  await page.getByLabel(/cuenta conmigo/i).check();
   await page.getByLabel(/alergias/i).fill("Ninguna");
-  await page.getByRole("button", { name: /enviar respuesta/i }).click();
+  await page.getByRole("button", { name: /guardar respuesta/i }).click();
 
   await expect(page.getByRole("status").filter({ hasText: /hemos guardado tu respuesta/i })).toBeVisible();
   await expect(page.locator("body")).not.toContainText(/Application error|fetch failed/i);
 });
 
 test("las páginas públicas responden y no filtran errores", async ({ page }) => {
-  for (const ruta of ["/es/agenda", "/es/informacion", "/es/mapa", "/es/regalo", "/es/rsvp", "/ca/agenda"]) {
+  const rutas = ["/es/programa", "/es/informacion", "/es/como-llegar", "/es/regalo", "/es/rsvp"];
+  if (idiomas.includes("ca")) rutas.push("/ca/programa");
+  for (const ruta of rutas) {
     const respuesta = await page.goto(ruta);
     expect(respuesta?.status(), `${ruta} debería responder 200`).toBe(200);
     await expect(page.locator("body")).not.toContainText(/Application error|fetch failed/i);

@@ -57,13 +57,13 @@ export default async function CronogramaPage() {
       <AdminPageHeader
         eyebrow="Planificación"
         title="Cronograma del día"
-        description="Programa real del día con eventos fijos y los que añadáis vosotros. La vista pública está en /agenda."
+        description="Programa real del día con eventos fijos y los que añadáis vosotros. La vista pública está en /programa."
         actions={
           <>
             <Badge variant="secondary">{details.dateLabel}</Badge>
             <Badge variant="outline">{details.venueName}</Badge>
             <Button asChild variant="outline" size="sm">
-              <Link href="/agenda" target="_blank" rel="noreferrer">
+              <Link href="/programa" target="_blank" rel="noreferrer">
                 <ExternalLink className="size-3.5" />
                 Vista pública
               </Link>

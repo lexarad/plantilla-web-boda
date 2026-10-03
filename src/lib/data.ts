@@ -11,6 +11,7 @@ import {
   getDemoAuditEvents,
   getDemoGuestById,
   getDemoGuests,
+  checkDemoRsvpSurname,
   getDemoRsvpExtras,
   getDemoRsvpGuest,
   getDemoSettings,
@@ -30,6 +31,7 @@ import type {
   AuditEvent,
   Guest,
   PlannerTask,
+  RsvpExtras,
   TimelineEvent,
   WeddingDocument,
   Supplier,
@@ -500,39 +502,6 @@ export async function getCateringGuests(): Promise<CateringGuest[]> {
   }));
 }
 
-export type MenuPopularity = {
-  menu: string;
-  count: number;
-  percent: number;
-};
-
-export async function getMenuPopularity(): Promise<MenuPopularity[]> {
-  const supabase = await createSupabaseServerClient();
-  let list: { menu_elegido: string; confirmacion_asistencia: string }[] = [];
-
-  if (!supabase) {
-    const all = await getDemoGuests();
-    list = all.map((g) => ({ menu_elegido: g.menu_elegido, confirmacion_asistencia: g.confirmacion_asistencia }));
-  } else {
-    // RPC security-definer: un SELECT directo como anon lo bloquearía la RLS
-    // (solo admin), dejando la popularidad vacía en producción.
-    const { data, error } = await supabase.rpc("popularidad_menus");
-    logQueryError("popularidad_menus", error);
-    list = (data ?? []) as { menu_elegido: string; confirmacion_asistencia: string }[];
-  }
-
-  const confirmed = list.filter((g) => g.confirmacion_asistencia === "confirmado");
-  const totals = new Map<string, number>();
-  for (const g of confirmed) {
-    if (g.menu_elegido === "pendiente") continue;
-    totals.set(g.menu_elegido, (totals.get(g.menu_elegido) ?? 0) + 1);
-  }
-  const totalConfirmed = Math.max(confirmed.length, 1);
-  return Array.from(totals.entries())
-    .map(([menu, count]) => ({ menu, count, percent: Math.round((count / totalConfirmed) * 100) }))
-    .sort((a, b) => b.count - a.count);
-}
-
 export type WeddingSettings = {
   iban: string;
   ibanHolder: string;
@@ -603,23 +572,39 @@ export async function getRsvpGuestResult(token: string): Promise<{
   };
 }
 
-export async function getRsvpExtras(token: string) {
+export async function getRsvpExtras(token: string): Promise<RsvpExtras | null> {
   const supabase = await createSupabaseServerClient();
 
   if (!supabase) {
     return getDemoRsvpExtras(token);
   }
 
-  // RPC security-definer `obtener_rsvp_extras`: resuelve por rsvp_token O código
-  // de invitación (el segmento de la URL pública es el código, no el token) y
-  // devuelve mesa + compañeros + autobús. Antes se hacían SELECT directos que la
-  // RLS bloqueaba como anon Y filtrando por rsvp_token con el código → doble
-  // fallo que dejaba "Mi reserva" vacío en producción.
-  type ExtrasPayload = NonNullable<Awaited<ReturnType<typeof getDemoRsvpExtras>>>;
+  // RPC security-definer `obtener_rsvp_extras`: resuelve por enlace o código y
+  // devuelve solo el nombre de la mesa y del autobús del propio invitado.
   const { data, error } = await supabase.rpc("obtener_rsvp_extras", { token_param: token });
   logQueryError("obtener_rsvp_extras", error);
 
   if (!data) return null;
 
-  return data as ExtrasPayload;
+  return data as RsvpExtras;
+}
+
+/**
+ * ¿Es este el apellido del invitado del enlace? La comprobación se hace en la
+ * base de datos: el apellido nunca viaja a la web de invitados.
+ */
+export async function checkRsvpSurname(token: string, apellido: string): Promise<boolean> {
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    return checkDemoRsvpSurname(token, apellido);
+  }
+
+  const { data, error } = await supabase.rpc("comprobar_apellido_invitado", {
+    token_param: token,
+    apellido_param: apellido
+  });
+  logQueryError("comprobar_apellido_invitado", error);
+
+  return data === true;
 }

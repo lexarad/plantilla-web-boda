@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { nombresParejaEnFrase } from "@/config/boda";
+import { mensajes } from "@/config/boda";
+import { rellenarMensaje } from "@/lib/mensajes";
 import { Barcode, Download, Eye, Trash2, UserPlus, Users } from "lucide-react";
 import { createGuestAction, deleteGuestAction, importGuestsAction, restoreGuestAction, updateGuestAction } from "@/app/(admin)/invitados/actions";
 import { getDeletedGuests, getGuests, getTables } from "@/lib/data";
@@ -293,7 +294,7 @@ export default async function GuestsPage({
           {guestsPagina.map((guest) => {
             const invitationCode = formatInvitationCode(guest.codigo_invitacion);
             const rsvpUrl = buildRsvpUrl(siteUrl, guest.codigo_invitacion);
-            const whatsappUrl = buildWhatsappUrl(`¡Hola ${guest.nombre}! Te enviamos tu enlace personal para confirmar asistencia a la boda de ${nombresParejaEnFrase.es}: ${rsvpUrl}`);
+            const whatsappUrl = buildWhatsappUrl(rellenarMensaje(mensajes.whatsappInvitacion, { nombre: guest.nombre, enlace: rsvpUrl }));
             const lastView = formatDateTime(guest.rsvp_last_view_at);
             const lastSubmit = formatDateTime(guest.rsvp_last_submitted_at);
 

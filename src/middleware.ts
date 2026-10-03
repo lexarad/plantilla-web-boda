@@ -9,9 +9,9 @@ const LANG_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 año
  * src/app/(public)/[lang]/, añádela aquí y en el `matcher` de abajo para que
  * /<seccion> sin idioma redirija a /es/<seccion>.
  */
-const RUTAS_PUBLICAS = ["agenda", "informacion", "mapa", "regalo", "rsvp"];
+const RUTAS_PUBLICAS = ["programa", "informacion", "como-llegar", "regalo", "rsvp"];
 
-/** /agenda/foto.jpg es un archivo de /public, no una página: no se toca. */
+/** /programa/foto.jpg es un archivo de /public, no una página: no se toca. */
 function esArchivo(pathname: string) {
   return /\.[a-z0-9]{2,5}$/i.test(pathname);
 }
@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
 
   // 1) El idioma vive en la URL. La raíz y las direcciones sin idioma
-  // (/agenda, /agenda?lang=ca) se redirigen a su versión con idioma,
+  // (/programa, /programa?lang=ca) se redirigen a su versión con idioma,
   // respetando lo que pidió el visitante o lo que recuerde su cookie.
   const primerSegmento = pathname.split("/")[1] ?? "";
   if (pathname === "/" || (RUTAS_PUBLICAS.includes(primerSegmento) && !esArchivo(pathname))) {
@@ -56,8 +56,8 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/",
-    "/(agenda|informacion|mapa|regalo|rsvp)",
-    "/(agenda|informacion|mapa|regalo|rsvp)/:path*",
+    "/(programa|informacion|como-llegar|regalo|rsvp)",
+    "/(programa|informacion|como-llegar|regalo|rsvp)/:path*",
     "/(es|ca)/rsvp/:path*",
     "/login",
     "/auth/:path*",

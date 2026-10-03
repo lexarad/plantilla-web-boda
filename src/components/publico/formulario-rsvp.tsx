@@ -14,9 +14,9 @@ const MENUS = ["adulto", "vegetariano", "vegano", "sin_gluten", "sin_lactosa", "
 
 const T = {
   es: {
-    asistencia: "¿Vienes?",
-    si: "Sí, allí estaré",
-    no: "No podré ir",
+    asistencia: "¿Podrás venir?",
+    si: "Cuenta conmigo",
+    no: "Esta vez no puedo",
     menu: "Menú",
     menus: {
       adulto: "Adulto",
@@ -30,15 +30,15 @@ const T = {
     alergias: "Alergias o intolerancias",
     autobus: "Quiero plaza en el autobús",
     alojamiento: "¿Dónde te alojas? (opcional)",
-    cancion: "Una canción que no puede faltar (opcional)",
+    cancion: "¿Qué canción te gustaría bailar? (opcional)",
     comentarios: "Comentarios",
-    guardar: "Enviar respuesta",
+    guardar: "Guardar respuesta",
     guardando: "Enviando…"
   },
   ca: {
-    asistencia: "Vens?",
-    si: "Sí, hi seré",
-    no: "No podré venir",
+    asistencia: "Podràs venir?",
+    si: "Compta amb mi",
+    no: "Aquesta vegada no puc",
     menu: "Menú",
     menus: {
       adulto: "Adult",
@@ -52,9 +52,9 @@ const T = {
     alergias: "Al·lèrgies o intoleràncies",
     autobus: "Vull plaça a l'autobús",
     alojamiento: "On t'allotges? (opcional)",
-    cancion: "Una cançó que no pot faltar (opcional)",
+    cancion: "Quina cançó t'agradaria ballar? (opcional)",
     comentarios: "Comentaris",
-    guardar: "Enviar resposta",
+    guardar: "Desar resposta",
     guardando: "Enviant…"
   }
 } as const;

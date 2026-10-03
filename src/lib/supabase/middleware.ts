@@ -34,6 +34,12 @@ export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   if (!env) {
+    // Sin Supabase solo existe el modo demo, que es solo para desarrollo local.
+    // En producción el panel se cierra AQUÍ, antes de renderizar nada: si se
+    // dejara al layout, la página ya habría cargado los datos en paralelo.
+    if (process.env.NODE_ENV === "production" && isProtectedPath(request.nextUrl.pathname)) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
     return response;
   }
 

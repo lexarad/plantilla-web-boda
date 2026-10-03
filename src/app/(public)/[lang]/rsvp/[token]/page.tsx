@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { unlockRsvpEditAction, updateRsvpAction } from "@/app/(public)/[lang]/rsvp/[token]/actions";
+import { updateRsvpAction } from "@/app/(public)/[lang]/rsvp/[token]/actions";
 import { nombresPareja, type WeddingLocale } from "@/config/boda";
 import { AddToCalendar } from "@/components/add-to-calendar";
 import { FormularioRsvp } from "@/components/publico/formulario-rsvp";
@@ -48,8 +48,8 @@ const copy: Record<
     graciasNo: "Gracias por avisarnos. Hemos guardado tu respuesta.",
     noEncontrado: "No encontramos esta invitación",
     noEncontradoTexto: "Revisa el enlace o escribe tu código de invitación.",
-    caido: "Ahora mismo no podemos cargar tu invitación",
-    caidoTexto: "Tu enlace es correcto: el problema es nuestro y suele durar pocos minutos. Vuelve a abrirlo dentro de un rato.",
+    caido: "La invitación no se puede abrir en este momento",
+    caidoTexto: "No es cosa de tu enlace, que funciona: estamos teniendo un problema técnico pasajero. Inténtalo otra vez más tarde.",
     volver: "Introducir código",
     estado: "Estado",
     mesa: "Tu mesa",
@@ -65,8 +65,8 @@ const copy: Record<
     graciasNo: "Gràcies per avisar-nos. Hem desat la teva resposta.",
     noEncontrado: "No trobem aquesta invitació",
     noEncontradoTexto: "Revisa l'enllaç o escriu el teu codi d'invitació.",
-    caido: "Ara mateix no podem carregar la teva invitació",
-    caidoTexto: "El teu enllaç és correcte: el problema és nostre i sol durar pocs minuts. Torna-hi d'aquí a una estona.",
+    caido: "La invitació no es pot obrir en aquest moment",
+    caidoTexto: "No és cosa del teu enllaç, que funciona: tenim un problema tècnic passatger. Torna-ho a provar més tard.",
     volver: "Introduir codi",
     estado: "Estat",
     mesa: "La teva taula",
@@ -80,7 +80,7 @@ export default async function RsvpPage({
   searchParams
 }: {
   params: Promise<{ lang: string; token: string }>;
-  searchParams: Promise<{ ok?: string }>;
+  searchParams: Promise<{ ok?: string; apellido?: string }>;
 }) {
   const { lang, token } = await params;
   const query = await searchParams;
@@ -105,10 +105,10 @@ export default async function RsvpPage({
     );
   }
 
-  // Quien ya respondió confirma su apellido para volver a editar, salvo justo
-  // después de guardar (acaba de demostrar que es él quien edita).
+  // Quien ya respondió confirma su apellido para volver a editar. La cookie
+  // solo existe si lo acertó (y la base de datos lo vuelve a comprobar al guardar).
   const cookieStore = await cookies();
-  const edicionDesbloqueada = cookieStore.get(rsvpEditCookieName(token))?.value === "1" || query.ok === "1";
+  const edicionDesbloqueada = Boolean(cookieStore.get(rsvpEditCookieName(token))?.value);
   const yaRespondio = guest.confirmacion_asistencia !== "pendiente";
   const necesitaDesbloquear = yaRespondio && !edicionDesbloqueada;
   const recienGuardado = query.ok === "1";
@@ -155,7 +155,7 @@ export default async function RsvpPage({
       <Bloque titulo={t.tuRespuesta}>
         <p className="text-sm text-muted-foreground">{t.cambiar}</p>
         {necesitaDesbloquear ? (
-          <RsvpEditGate token={token} locale={locale} action={unlockRsvpEditAction} />
+          <RsvpEditGate token={token} locale={locale} error={query.apellido === "incorrecto"} />
         ) : (
           <FormularioRsvp
             token={token}
